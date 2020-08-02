@@ -26,22 +26,40 @@ pub fn draw<B: Backend>(editor: &Editor, terminal: &mut Terminal<B>) -> Result<(
             .split(area);
 
         // There's some bug with the first line, so skip it for now
+        draw_top_bar(editor, chunks[0], f);
         draw_text(editor, chunks[1], f);
         draw_statusline(editor, chunks[2], f);
         draw_commandline(editor, chunks[3], f);
     })
 }
 
+fn draw_top_bar<B: Backend>(editor: &Editor, area: Rect, frame: &mut Frame<B>) {
+    let block = Block::default().style(Style::default().bg(Color::Gray).fg(Color::Black));
+    frame.render_widget(block, area);
+}
+
 fn draw_text<B: Backend>(editor: &Editor, area: Rect, frame: &mut Frame<B>) {
-    let text = Text::from(editor.text_buffer.as_str());
+    let text = Text::from(editor.text_buffer.get_text());
     let paragraph = Paragraph::new(text)
         .style(Style::default().fg(Color::White).bg(Color::Black))
         .wrap(Wrap { trim: true });
     frame.render_widget(paragraph, area);
+
+    if editor.mode == Mode::Normal || editor.mode == Mode::Insert {
+        if editor.mode == Mode::Normal {
+            print!("{}", cursor::SteadyBlock);
+        }
+        if editor.mode == Mode::Insert {
+            print!("{}", cursor::SteadyBar);
+        }
+
+        let cursor = editor.text_buffer.get_cursor() as u16;
+        frame.set_cursor(area.x + cursor % area.width, area.y + cursor / area.width)
+    }
 }
 
 fn draw_statusline<B: Backend>(editor: &Editor, area: Rect, frame: &mut Frame<B>) {
-    let status = editor.mode.to_string();
+    let status = format!("{}", editor.mode.to_string());
     let text = Text::from(status.as_str());
     let paragraph = Paragraph::new(text)
         .style(Style::default().bg(Color::Gray).fg(Color::Black))
@@ -63,5 +81,8 @@ fn draw_commandline<B: Backend>(editor: &Editor, area: Rect, frame: &mut Frame<B
     frame.render_widget(paragraph, area);
 
     print!("{}", cursor::SteadyBlock);
-    frame.set_cursor(area.x + command.len() as u16, area.y)
+    frame.set_cursor(
+        area.x + editor.command_buffer.get_cursor() as u16 + 1,
+        area.y,
+    )
 }

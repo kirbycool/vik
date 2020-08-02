@@ -3,6 +3,7 @@ use crate::text_buffer::TextBuffer;
 use termion::event::Key;
 
 pub fn handle_command_input(key: Key, editor: &mut Editor) {
+    let cursor = editor.command_buffer.get_cursor();
     match key {
         Key::Char('\n') => {
             editor.run_command();
@@ -17,10 +18,16 @@ pub fn handle_command_input(key: Key, editor: &mut Editor) {
             editor.mode = Mode::Normal;
         }
         Key::Backspace => {
-            let cursor = editor.command_buffer.get_cursor();
-            editor.command_buffer.delete((cursor - 1)..(cursor));
-        }
+            if cursor == 0 {
+                return;
+            }
 
+            editor.command_buffer.delete((cursor - 1)..cursor);
+        }
+        Key::Left => editor
+            .command_buffer
+            .set_cursor(if cursor == 0 { 0 } else { cursor - 1 }),
+        Key::Right => editor.command_buffer.set_cursor(cursor + 1),
         _ => (),
     }
 }

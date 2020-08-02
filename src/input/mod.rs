@@ -1,26 +1,17 @@
 mod command;
+mod insert;
+mod normal;
 
 use crate::editor::{Editor, Mode};
 use command::handle_command_input;
+use insert::handle_insert_input;
+use normal::handle_normal_input;
 use termion::event::Key;
 
 pub fn handle_input(key: Key, editor: &mut Editor) {
     match editor.mode {
-        Mode::Normal => match key {
-            Key::Char(':') => editor.mode = Mode::Command,
-            Key::Char('i') => editor.mode = Mode::Insert,
-            _ => (),
-        },
+        Mode::Normal => handle_normal_input(key, editor),
         Mode::Command => handle_command_input(key, editor),
-        Mode::Insert => match key {
-            Key::Esc => editor.mode = Mode::Normal,
-            Key::Char(c) => {
-                editor.text_buffer.push(c);
-            }
-            Key::Backspace => {
-                editor.text_buffer.pop();
-            }
-            _ => (),
-        },
+        Mode::Insert => handle_insert_input(key, editor),
     }
 }

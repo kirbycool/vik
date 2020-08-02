@@ -26,7 +26,7 @@ impl fmt::Display for Mode {
 }
 
 pub struct Editor {
-    pub text_buffer: String,
+    pub text_buffer: ArrayBuffer,
     pub command_buffer: ArrayBuffer,
     pub mode: Mode,
     pub running: bool,
@@ -35,7 +35,7 @@ pub struct Editor {
 impl Editor {
     pub fn new() -> Self {
         Editor {
-            text_buffer: "".to_string(),
+            text_buffer: ArrayBuffer::new("".to_string()),
             command_buffer: ArrayBuffer::new("".to_string()),
             mode: Mode::Normal,
             running: true,
