@@ -6,7 +6,7 @@ use tui::backend::Backend;
 use tui::layout::{Constraint, Direction, Layout, Rect};
 use tui::style::{Color, Style};
 use tui::text::Text;
-use tui::widgets::{Block, Paragraph, Wrap};
+use tui::widgets::{Block, Paragraph};
 use tui::{Frame, Terminal};
 
 pub fn draw<B: Backend>(editor: &Editor, terminal: &mut Terminal<B>) -> Result<(), io::Error> {
@@ -40,9 +40,7 @@ fn draw_top_bar<B: Backend>(editor: &Editor, area: Rect, frame: &mut Frame<B>) {
 
 fn draw_text<B: Backend>(editor: &Editor, area: Rect, frame: &mut Frame<B>) {
     let text = Text::from(editor.text_buffer.get_text());
-    let paragraph = Paragraph::new(text)
-        .style(Style::default().fg(Color::White).bg(Color::Black))
-        .wrap(Wrap { trim: true });
+    let paragraph = Paragraph::new(text).style(Style::default().fg(Color::White).bg(Color::Black));
     frame.render_widget(paragraph, area);
 
     if editor.mode == Mode::Normal || editor.mode == Mode::Insert {
@@ -53,17 +51,23 @@ fn draw_text<B: Backend>(editor: &Editor, area: Rect, frame: &mut Frame<B>) {
             print!("{}", cursor::SteadyBar);
         }
 
-        let cursor = editor.text_buffer.get_cursor() as u16;
-        frame.set_cursor(area.x + cursor % area.width, area.y + cursor / area.width)
+        // Handle cursor
+        let cursor = editor.text_buffer.get_cursor();
+        frame.set_cursor(
+            area.x + cursor.col as u16 % area.width,
+            area.y + cursor.line as u16 + cursor.col as u16 / area.width,
+        )
     }
 }
 
 fn draw_statusline<B: Backend>(editor: &Editor, area: Rect, frame: &mut Frame<B>) {
-    let status = format!("{}", editor.mode.to_string());
+    let status = format!(
+        "{} cursor: {}",
+        editor.mode.to_string(),
+        editor.text_buffer.get_cursor().pos
+    );
     let text = Text::from(status.as_str());
-    let paragraph = Paragraph::new(text)
-        .style(Style::default().bg(Color::Gray).fg(Color::Black))
-        .wrap(Wrap { trim: true });
+    let paragraph = Paragraph::new(text).style(Style::default().bg(Color::Gray).fg(Color::Black));
     frame.render_widget(paragraph, area);
 }
 
@@ -77,12 +81,14 @@ fn draw_commandline<B: Backend>(editor: &Editor, area: Rect, frame: &mut Frame<B
 
     let command = format!(":{}", editor.command_buffer.get_text());
     let text = Text::from(command.as_str());
-    let paragraph = Paragraph::new(text).style(style).wrap(Wrap { trim: true });
+    let paragraph = Paragraph::new(text).style(style);
     frame.render_widget(paragraph, area);
 
+    // Handle cursor
+    let cursor = editor.command_buffer.get_cursor();
     print!("{}", cursor::SteadyBlock);
     frame.set_cursor(
-        area.x + editor.command_buffer.get_cursor() as u16 + 1,
-        area.y,
+        area.x + cursor.col as u16 + 1,
+        area.y, // Always one line
     )
 }

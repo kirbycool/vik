@@ -7,27 +7,19 @@ pub fn handle_command_input(key: Key, editor: &mut Editor) {
     match key {
         Key::Char('\n') => {
             editor.run_command();
-            editor.command_buffer.delete(..);
+            editor.command_buffer.delete_range(..);
             editor.mode = Mode::Normal;
         }
         Key::Char(c) => {
-            editor.command_buffer.insert(c.to_string().as_str());
+            editor.command_buffer.insert(c);
         }
         Key::Esc => {
-            editor.command_buffer.delete(..);
+            editor.command_buffer.delete_range(..);
             editor.mode = Mode::Normal;
         }
-        Key::Backspace => {
-            if cursor == 0 {
-                return;
-            }
-
-            editor.command_buffer.delete((cursor - 1)..cursor);
-        }
-        Key::Left => editor
-            .command_buffer
-            .set_cursor(if cursor == 0 { 0 } else { cursor - 1 }),
-        Key::Right => editor.command_buffer.set_cursor(cursor + 1),
+        Key::Backspace => editor.command_buffer.delete(),
+        Key::Left => editor.command_buffer.move_cursor_x(-1),
+        Key::Right => editor.command_buffer.move_cursor_x(1),
         _ => (),
     }
 }

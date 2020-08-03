@@ -1,12 +1,5 @@
-use crate::input::handle_input;
 use crate::text_buffer::{ArrayBuffer, TextBuffer};
-use crate::ui::draw;
 use std::fmt;
-use std::io;
-use termion::input::TermRead;
-use termion::raw::IntoRawMode;
-use tui::backend::TermionBackend;
-use tui::Terminal;
 
 #[derive(PartialEq)]
 pub enum Mode {
@@ -35,7 +28,7 @@ pub struct Editor {
 impl Editor {
     pub fn new() -> Self {
         Editor {
-            text_buffer: ArrayBuffer::new("".to_string()),
+            text_buffer: ArrayBuffer::new("line 1\nline2\nline3".to_string()),
             command_buffer: ArrayBuffer::new("".to_string()),
             mode: Mode::Normal,
             running: true,
@@ -46,33 +39,6 @@ impl Editor {
         match self.command_buffer.get_text() {
             "q" => self.running = false,
             _ => (),
-        }
-    }
-}
-
-// The main run loop
-pub fn run_loop() {
-    let stdout = io::stdout().into_raw_mode().unwrap();
-    let backend = TermionBackend::new(stdout);
-    let mut terminal = Terminal::new(backend).unwrap();
-    let mut keys = io::stdin().keys();
-
-    let mut editor = Editor::new();
-
-    // Initial draw
-    draw(&editor, &mut terminal).unwrap();
-
-    while editor.running {
-        let mut should_draw = false;
-        let editor = &mut editor;
-
-        if let Some(Ok(key)) = keys.next() {
-            handle_input(key, editor);
-            should_draw = true;
-        }
-
-        if should_draw {
-            draw(&editor, &mut terminal).unwrap();
         }
     }
 }
