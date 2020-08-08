@@ -10,6 +10,7 @@ pub struct Cursor {
     pub col: usize,
 }
 
+#[derive(Debug)]
 pub struct Line<'a> {
     pub text: &'a str,
     pub start: usize,

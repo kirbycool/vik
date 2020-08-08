@@ -52,7 +52,7 @@ fn draw_text<B: Backend>(editor: &Editor, area: Rect, frame: &mut Frame<B>) {
         }
 
         // Handle cursor
-        let cursor = editor.text_buffer.get_cursor();
+        let cursor = &editor.text_buffer.get_cursor();
         frame.set_cursor(
             area.x + cursor.col as u16 % area.width,
             area.y + cursor.line as u16 + cursor.col as u16 / area.width,
@@ -62,9 +62,10 @@ fn draw_text<B: Backend>(editor: &Editor, area: Rect, frame: &mut Frame<B>) {
 
 fn draw_statusline<B: Backend>(editor: &Editor, area: Rect, frame: &mut Frame<B>) {
     let status = format!(
-        "{} cursor: {:?}",
+        "{} cursor: {:?}, line: {:?}",
         editor.mode.to_string(),
-        editor.text_buffer.get_cursor()
+        editor.text_buffer.get_cursor(),
+        editor.text_buffer.get_line()
     );
     let text = Text::from(status.as_str());
     let paragraph = Paragraph::new(text).style(Style::default().bg(Color::Gray).fg(Color::Black));
@@ -85,7 +86,7 @@ fn draw_commandline<B: Backend>(editor: &Editor, area: Rect, frame: &mut Frame<B
     frame.render_widget(paragraph, area);
 
     // Handle cursor
-    let cursor = editor.command_buffer.get_cursor();
+    let cursor = &editor.command_buffer.get_cursor();
     print!("{}", cursor::SteadyBlock);
     frame.set_cursor(
         area.x + cursor.col as u16 + 1,

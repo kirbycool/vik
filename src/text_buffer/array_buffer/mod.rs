@@ -6,12 +6,32 @@ use std::ops::RangeBounds;
 
 pub struct ArrayBuffer {
     text: String,
-    cursor: usize,
+    cursor: Cursor,
 }
 
 impl ArrayBuffer {
     pub fn new(text: String) -> Self {
-        ArrayBuffer { text, cursor: 0 }
+        ArrayBuffer {
+            text,
+            cursor: Cursor { line: 1, col: 0 },
+        }
+    }
+
+    // Convert line + col to an index
+    fn cursor_pos(&self) -> usize {
+        let cursor = self.get_cursor();
+        let line = self.get_line();
+        if line.start + cursor.col > line.end {
+            line.end
+        } else {
+            line.start + cursor.col
+        }
+    }
+
+    // Update the cursor given a pos
+    fn update_cursor(&mut self, pos: usize) {
+        self.cursor.line = self.text[..pos].matches('\n').count();
+        self.cursor.col = pos - self.get_line().start;
     }
 }
 
@@ -21,10 +41,16 @@ impl TextBuffer for ArrayBuffer {
     }
 
     fn get_line<'a>(&'a self) -> Line<'a> {
-        let start = self.text[..self.cursor].rfind('\n').map_or(0, |i| i + 1);
-        let end = self.text[self.cursor..]
+        let mut start = 0;
+        for _ in 0..self.cursor.line {
+            start = self.text[start..]
+                .find('\n')
+                .map_or(start, |i| start + i + 1)
+        }
+
+        let end = self.text[start..]
             .find('\n')
-            .map_or(self.text.len() - 1, |i| self.cursor + i);
+            .map_or(self.text.len(), |i| i + start);
 
         Line {
             text: &self.text[start..end],
@@ -34,37 +60,45 @@ impl TextBuffer for ArrayBuffer {
     }
 
     fn get_cursor(&self) -> Cursor {
+        let line = self.get_line();
+        let max_col = line.end - line.start;
         Cursor {
-            line: self.text[..self.cursor].matches('\n').count(),
-            col: self.cursor - self.get_line().start,
+            line: self.cursor.line,
+            col: if self.cursor.col > max_col {
+                max_col
+            } else {
+                self.cursor.col
+            },
         }
     }
 
     fn insert(&mut self, c: char) {
-        self.text.insert(self.cursor, c);
-        self.cursor += 1;
+        let pos = self.cursor_pos();
+        self.text.insert(pos, c);
+        self.update_cursor(pos + 1);
     }
 
     fn delete(&mut self) {
-        if self.cursor == 0 {
+        let pos = self.cursor_pos();
+        if pos == 0 {
             return;
         }
 
-        self.text.remove(self.cursor - 1);
-        self.cursor -= 1
+        self.text.remove(pos - 1);
+        self.update_cursor(pos - 1);
     }
 
     fn delete_range<R: RangeBounds<usize>>(&mut self, range: R) {
-        let new_cursor = match range.start_bound() {
+        let new_pos = match range.start_bound() {
             Bound::Unbounded => 0,
             Bound::Included(&s) => s,
             Bound::Excluded(&s) => s + 1,
         };
         self.text.replace_range(range, "");
-        self.cursor = if new_cursor > self.text.len() - 1 {
-            self.text.len() - 1
+        if new_pos > self.text.len() {
+            self.update_cursor(self.text.len())
         } else {
-            new_cursor
+            self.update_cursor(new_pos);
         };
     }
 }

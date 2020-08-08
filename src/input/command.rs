@@ -3,7 +3,6 @@ use crate::text_buffer::{TextBuffer, TextMotions};
 use termion::event::Key;
 
 pub fn handle_command_input(key: Key, editor: &mut Editor) {
-    let cursor = editor.command_buffer.get_cursor();
     match key {
         Key::Char('\n') => {
             editor.run_command();
