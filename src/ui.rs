@@ -62,9 +62,9 @@ fn draw_text<B: Backend>(editor: &Editor, area: Rect, frame: &mut Frame<B>) {
 
 fn draw_statusline<B: Backend>(editor: &Editor, area: Rect, frame: &mut Frame<B>) {
     let status = format!(
-        "{} cursor: {}",
+        "{} cursor: {:?}",
         editor.mode.to_string(),
-        editor.text_buffer.get_cursor().pos
+        editor.text_buffer.get_cursor()
     );
     let text = Text::from(status.as_str());
     let paragraph = Paragraph::new(text).style(Style::default().bg(Color::Gray).fg(Color::Black));

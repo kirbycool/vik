@@ -1,5 +1,5 @@
 use crate::editor::{Editor, Mode};
-use crate::text_buffer::TextBuffer;
+use crate::text_buffer::{TextBuffer, TextMotions};
 use termion::event::Key;
 
 pub fn handle_normal_input(key: Key, editor: &mut Editor) {
@@ -11,19 +11,15 @@ pub fn handle_normal_input(key: Key, editor: &mut Editor) {
             editor.mode = Mode::Insert;
         }
         Key::Char('a') => {
-            editor.text_buffer.move_cursor_x(1);
+            editor.text_buffer.next();
             editor.mode = Mode::Insert;
         }
-        Key::Left | Key::Char('h') => editor.text_buffer.move_cursor_x(-1),
-        Key::Right | Key::Char('l') => editor.text_buffer.move_cursor_x(1),
-        Key::Up | Key::Char('k') => editor.text_buffer.move_cursor_y(-1),
-        Key::Down | Key::Char('j') => editor.text_buffer.move_cursor_y(1),
-        Key::Char('0') => editor
-            .text_buffer
-            .set_cursor(editor.text_buffer.get_line().start),
-        Key::Char('$') => editor
-            .text_buffer
-            .set_cursor(editor.text_buffer.get_line().end),
+        Key::Left | Key::Char('h') => editor.text_buffer.prev(),
+        Key::Right | Key::Char('l') => editor.text_buffer.next(),
+        Key::Up | Key::Char('k') => editor.text_buffer.prev_line(),
+        Key::Down | Key::Char('j') => editor.text_buffer.next_line(),
+        Key::Char('0') => editor.text_buffer.start_line(),
+        Key::Char('$') => editor.text_buffer.end_line(),
         _ => (),
     }
 }

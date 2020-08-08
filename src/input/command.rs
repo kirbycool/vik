@@ -1,5 +1,5 @@
 use crate::editor::{Editor, Mode};
-use crate::text_buffer::TextBuffer;
+use crate::text_buffer::{TextBuffer, TextMotions};
 use termion::event::Key;
 
 pub fn handle_command_input(key: Key, editor: &mut Editor) {
@@ -18,8 +18,8 @@ pub fn handle_command_input(key: Key, editor: &mut Editor) {
             editor.mode = Mode::Normal;
         }
         Key::Backspace => editor.command_buffer.delete(),
-        Key::Left => editor.command_buffer.move_cursor_x(-1),
-        Key::Right => editor.command_buffer.move_cursor_x(1),
+        Key::Left => editor.command_buffer.prev(),
+        Key::Right => editor.command_buffer.next(),
         _ => (),
     }
 }

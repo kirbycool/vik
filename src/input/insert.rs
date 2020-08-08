@@ -1,5 +1,5 @@
 use crate::editor::{Editor, Mode};
-use crate::text_buffer::TextBuffer;
+use crate::text_buffer::{TextBuffer, TextMotions};
 use termion::cursor;
 use termion::event::Key;
 
@@ -13,10 +13,10 @@ pub fn handle_insert_input(key: Key, editor: &mut Editor) {
             editor.mode = Mode::Normal;
         }
         Key::Backspace => editor.text_buffer.delete(),
-        Key::Left => editor.text_buffer.move_cursor_x(-1),
-        Key::Right => editor.text_buffer.move_cursor_x(1),
-        Key::Up => editor.text_buffer.move_cursor_y(-1),
-        Key::Down => editor.text_buffer.move_cursor_y(1),
+        Key::Left => editor.text_buffer.prev(),
+        Key::Right => editor.text_buffer.next(),
+        Key::Up => editor.text_buffer.prev_line(),
+        Key::Down => editor.text_buffer.next_line(),
         _ => (),
     }
 }
