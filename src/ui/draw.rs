@@ -1,5 +1,6 @@
 use crate::editor::{Editor, Mode};
 use crate::text_buffer::TextBuffer;
+use crate::ui::text_window::TextWindow;
 use std::io;
 use termion::cursor;
 use tui::backend::Backend;
@@ -9,7 +10,7 @@ use tui::text::Text;
 use tui::widgets::{Block, Paragraph};
 use tui::{Frame, Terminal};
 
-pub fn draw<B: Backend>(editor: &Editor, terminal: &mut Terminal<B>) -> Result<(), io::Error> {
+pub fn draw<B: Backend>(editor: &mut Editor, terminal: &mut Terminal<B>) -> Result<(), io::Error> {
     terminal.draw(|f| {
         let area = f.size();
         let chunks = Layout::default()
@@ -38,10 +39,11 @@ fn draw_top_bar<B: Backend>(editor: &Editor, area: Rect, frame: &mut Frame<B>) {
     frame.render_widget(block, area);
 }
 
-fn draw_text<B: Backend>(editor: &Editor, area: Rect, frame: &mut Frame<B>) {
+fn draw_text<B: Backend>(editor: &mut Editor, area: Rect, frame: &mut Frame<B>) {
     let text = Text::from(editor.text_buffer.get_text());
-    let paragraph = Paragraph::new(text).style(Style::default().fg(Color::White).bg(Color::Black));
-    frame.render_widget(paragraph, area);
+    let paragraph = TextWindow::new(text, editor.text_buffer.get_cursor())
+        .style(Style::default().fg(Color::White).bg(Color::Black));
+    frame.render_stateful_widget(paragraph, area, &mut editor.text_window_state);
 
     if editor.mode == Mode::Normal || editor.mode == Mode::Insert {
         if editor.mode == Mode::Normal {
@@ -52,10 +54,11 @@ fn draw_text<B: Backend>(editor: &Editor, area: Rect, frame: &mut Frame<B>) {
         }
 
         // Handle cursor
-        let cursor = &editor.text_buffer.get_cursor();
+        let cursor = editor.text_buffer.get_cursor();
+        let offset = editor.text_window_state.offset;
         frame.set_cursor(
             area.x + cursor.col as u16 % area.width,
-            area.y + cursor.line as u16 + cursor.col as u16 / area.width,
+            area.y + cursor.line as u16 + cursor.col as u16 / area.width - offset as u16,
         )
     }
 }

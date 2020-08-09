@@ -4,7 +4,7 @@ pub use array_buffer::ArrayBuffer;
 
 use std::ops::RangeBounds;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Cursor {
     pub line: usize,
     pub col: usize,

@@ -28,19 +28,18 @@ fn main() {
     };
 
     // Initial draw
-    draw(&editor, &mut terminal).unwrap();
+    draw(&mut editor, &mut terminal).unwrap();
 
     while editor.running {
         let mut should_draw = false;
-        let editor = &mut editor;
 
         if let Some(Ok(key)) = keys.next() {
-            handle_input(key, editor);
+            handle_input(key, &mut editor);
             should_draw = true;
         }
 
         if should_draw {
-            draw(&editor, &mut terminal).unwrap();
+            draw(&mut editor, &mut terminal).unwrap();
         }
     }
 }

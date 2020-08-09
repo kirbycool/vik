@@ -5,7 +5,7 @@ use termion::event::Key;
 pub fn handle_command_input(key: Key, editor: &mut Editor) {
     match key {
         Key::Char('\n') => {
-            editor.run_command();
+            editor.run_command().unwrap();
             editor.command_buffer.delete_range(..);
             editor.mode = Mode::Normal;
         }

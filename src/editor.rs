@@ -1,5 +1,6 @@
 use crate::file::{load_file, write_file};
 use crate::text_buffer::{ArrayBuffer, TextBuffer};
+use crate::ui::text_window::TextWindowState;
 use std::error::Error;
 use std::fmt;
 
@@ -26,6 +27,7 @@ pub struct Editor {
     pub mode: Mode,
     pub running: bool,
     pub filename: Option<String>,
+    pub text_window_state: TextWindowState,
 }
 
 impl Editor {
@@ -36,17 +38,15 @@ impl Editor {
             mode: Mode::Normal,
             running: true,
             filename: None,
+            text_window_state: TextWindowState::new(),
         }
     }
 
     pub fn from_file(filename: String) -> Self {
-        Editor {
-            text_buffer: load_file(filename.as_str()).unwrap(),
-            command_buffer: ArrayBuffer::new("".to_string()),
-            mode: Mode::Normal,
-            running: true,
-            filename: Some(filename),
-        }
+        let mut editor = Editor::new();
+        editor.text_buffer = load_file(filename.as_str()).unwrap();
+        editor.filename = Some(filename);
+        editor
     }
 
     pub fn run_command(&mut self) -> Result<(), Box<dyn Error + 'static>> {
@@ -67,6 +67,13 @@ impl Editor {
                 }
                 [filename] => {
                     write_file(filename, &self.text_buffer)?;
+                }
+                _ => (),
+            },
+            "edit" | "e" => match args {
+                [filename] => {
+                    self.filename = Some(filename.to_string());
+                    self.text_buffer = load_file(filename).unwrap();
                 }
                 _ => (),
             },
