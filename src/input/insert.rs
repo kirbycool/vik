@@ -1,5 +1,5 @@
 use crate::editor::{Editor, Mode};
-use crate::text_buffer::{TextBuffer, TextMotions};
+use crate::text_buffer::TextBuffer;
 use termion::cursor;
 use termion::event::Key;
 

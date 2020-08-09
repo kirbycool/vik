@@ -17,7 +17,7 @@ pub struct Line<'a> {
     pub end: usize,
 }
 
-pub trait TextBuffer {
+pub trait TextOps {
     fn get_text<'a>(&'a self) -> &'a str;
 
     fn get_line<'a>(&'a self) -> Line<'a>;
@@ -44,3 +44,5 @@ pub trait TextMotions {
 
     fn end_line(&mut self);
 }
+
+pub trait TextBuffer = TextOps + TextMotions;

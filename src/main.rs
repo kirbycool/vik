@@ -1,3 +1,4 @@
+use clap::{App, Arg};
 use std::io;
 use termion::input::TermRead;
 use termion::raw::IntoRawMode;
@@ -8,12 +9,23 @@ use vik::input::handle_input;
 use vik::ui::draw;
 
 fn main() {
+    let clap_app = App::new("Vik").arg(
+        Arg::with_name("FILE")
+            .index(1)
+            .required(false)
+            .help("The file to open"),
+    );
+    let matches = clap_app.get_matches();
+
     let stdout = io::stdout().into_raw_mode().unwrap();
     let backend = TermionBackend::new(stdout);
     let mut terminal = Terminal::new(backend).unwrap();
     let mut keys = io::stdin().keys();
 
-    let mut editor = Editor::new();
+    let mut editor = match matches.value_of("FILE") {
+        Some(filename) => Editor::from_file(filename.to_string()),
+        None => Editor::new(),
+    };
 
     // Initial draw
     draw(&editor, &mut terminal).unwrap();
