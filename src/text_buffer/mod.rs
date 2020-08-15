@@ -1,9 +1,10 @@
 pub mod array_buffer;
+pub mod piece_table_buffer;
 
 pub use array_buffer::ArrayBuffer;
+pub use piece_table_buffer::PieceTableBuffer;
 
 use std::ops::RangeBounds;
-use tui::text::Text;
 
 #[derive(Debug, Clone)]
 pub struct Cursor {
@@ -19,14 +20,6 @@ pub struct Line<'a> {
 }
 
 pub trait TextOps {
-    fn get_contents<'a>(&'a self) -> &'a str;
-
-    fn get_text(&self) -> Text;
-
-    fn get_line<'a>(&'a self) -> Line<'a>;
-
-    fn get_cursor(&self) -> Cursor;
-
     fn insert(&mut self, c: char);
 
     fn delete(&mut self);

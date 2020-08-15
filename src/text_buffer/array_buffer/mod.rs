@@ -18,31 +18,21 @@ impl ArrayBuffer {
         }
     }
 
-    // Convert line + col to an index
-    fn cursor_pos(&self) -> usize {
-        let cursor = self.get_cursor();
-        let line = self.get_line();
-        if line.start + cursor.col > line.end {
-            line.end
-        } else {
-            line.start + cursor.col
-        }
-    }
-
-    // Update the cursor given a pos
-    fn update_cursor(&mut self, pos: usize) {
-        self.cursor.line = self.text[..pos].matches('\n').count();
-        self.cursor.col = pos - self.get_line().start;
-    }
-}
-
-impl TextOps for ArrayBuffer {
-    fn get_contents<'a>(&'a self) -> &'a str {
+    pub fn get_text<'a>(&'a self) -> &'a str {
         self.text.as_str()
     }
 
-    fn get_text<'a>(&'a self) -> Text {
-        Text::from(self.text.as_str())
+    pub fn get_cursor(&self) -> Cursor {
+        let line = self.get_line();
+        let max_col = line.end - line.start;
+        Cursor {
+            line: self.cursor.line,
+            col: if self.cursor.col > max_col {
+                max_col
+            } else {
+                self.cursor.col
+            },
+        }
     }
 
     fn get_line<'a>(&'a self) -> Line<'a> {
@@ -64,19 +54,25 @@ impl TextOps for ArrayBuffer {
         }
     }
 
-    fn get_cursor(&self) -> Cursor {
+    // Convert line + col to an index
+    fn cursor_pos(&self) -> usize {
+        let cursor = self.get_cursor();
         let line = self.get_line();
-        let max_col = line.end - line.start;
-        Cursor {
-            line: self.cursor.line,
-            col: if self.cursor.col > max_col {
-                max_col
-            } else {
-                self.cursor.col
-            },
+        if line.start + cursor.col > line.end {
+            line.end
+        } else {
+            line.start + cursor.col
         }
     }
 
+    // Update the cursor given a pos
+    fn update_cursor(&mut self, pos: usize) {
+        self.cursor.line = self.text[..pos].matches('\n').count();
+        self.cursor.col = pos - self.get_line().start;
+    }
+}
+
+impl TextOps for ArrayBuffer {
     fn insert(&mut self, c: char) {
         let pos = self.cursor_pos();
         self.text.insert(pos, c);

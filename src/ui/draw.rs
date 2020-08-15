@@ -1,5 +1,4 @@
 use crate::editor::{Editor, Mode};
-use crate::text_buffer::TextBuffer;
 use crate::ui::text_window::TextWindow;
 use std::io;
 use termion::cursor;
@@ -40,7 +39,8 @@ fn draw_top_bar<B: Backend>(editor: &Editor, area: Rect, frame: &mut Frame<B>) {
 }
 
 fn draw_text<B: Backend>(editor: &mut Editor, area: Rect, frame: &mut Frame<B>) {
-    let text = Text::from(editor.text_buffer.get_text());
+    let content = editor.text_buffer.get_text();
+    let text = Text::from(content.as_str());
     let paragraph = TextWindow::new(text, editor.text_buffer.get_cursor())
         .style(Style::default().fg(Color::White).bg(Color::Black));
     frame.render_stateful_widget(paragraph, area, &mut editor.text_window_state);
@@ -82,7 +82,7 @@ fn draw_commandline<B: Backend>(editor: &Editor, area: Rect, frame: &mut Frame<B
         return;
     }
 
-    let text = format!(":{}", editor.command_buffer.get_contents());
+    let text = format!(":{}", editor.command_buffer.get_text());
     let paragraph = Paragraph::new(text.as_str()).style(style);
     frame.render_widget(paragraph, area);
 

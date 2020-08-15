@@ -1,4 +1,4 @@
-use crate::text_buffer::{ArrayBuffer, TextBuffer, TextMotions};
+use crate::text_buffer::{ArrayBuffer, TextMotions};
 
 impl TextMotions for ArrayBuffer {
     fn prev(&mut self) {

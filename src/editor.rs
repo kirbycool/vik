@@ -1,5 +1,5 @@
 use crate::file::{load_file, write_file};
-use crate::text_buffer::ArrayBuffer;
+use crate::text_buffer::{ArrayBuffer, PieceTableBuffer};
 use crate::ui::text_window::TextWindowState;
 use std::error::Error;
 use std::fmt;
@@ -22,7 +22,7 @@ impl fmt::Display for Mode {
 }
 
 pub struct Editor {
-    pub text_buffer: ArrayBuffer,
+    pub text_buffer: PieceTableBuffer,
     pub command_buffer: ArrayBuffer,
     pub mode: Mode,
     pub running: bool,
@@ -33,7 +33,7 @@ pub struct Editor {
 impl Editor {
     pub fn new() -> Self {
         Editor {
-            text_buffer: ArrayBuffer::new("".to_string()),
+            text_buffer: PieceTableBuffer::new("".to_string()),
             command_buffer: ArrayBuffer::new("".to_string()),
             mode: Mode::Normal,
             running: true,
