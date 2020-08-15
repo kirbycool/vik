@@ -82,9 +82,8 @@ fn draw_commandline<B: Backend>(editor: &Editor, area: Rect, frame: &mut Frame<B
         return;
     }
 
-    let command = format!(":{}", editor.command_buffer.get_text());
-    let text = Text::from(command.as_str());
-    let paragraph = Paragraph::new(text).style(style);
+    let text = format!(":{}", editor.command_buffer.get_contents());
+    let paragraph = Paragraph::new(text.as_str()).style(style);
     frame.render_widget(paragraph, area);
 
     // Handle cursor

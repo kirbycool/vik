@@ -3,10 +3,11 @@ pub mod motions;
 use crate::text_buffer::{Cursor, Line, TextOps};
 use std::ops::Bound;
 use std::ops::RangeBounds;
+use tui::text::Text;
 
 pub struct ArrayBuffer {
-    text: String,
-    cursor: Cursor,
+    pub text: String,
+    pub cursor: Cursor,
 }
 
 impl ArrayBuffer {
@@ -36,8 +37,12 @@ impl ArrayBuffer {
 }
 
 impl TextOps for ArrayBuffer {
-    fn get_text<'a>(&'a self) -> &'a str {
+    fn get_contents<'a>(&'a self) -> &'a str {
         self.text.as_str()
+    }
+
+    fn get_text<'a>(&'a self) -> Text {
+        Text::from(self.text.as_str())
     }
 
     fn get_line<'a>(&'a self) -> Line<'a> {

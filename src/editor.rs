@@ -1,5 +1,5 @@
 use crate::file::{load_file, write_file};
-use crate::text_buffer::{ArrayBuffer, TextBuffer};
+use crate::text_buffer::ArrayBuffer;
 use crate::ui::text_window::TextWindowState;
 use std::error::Error;
 use std::fmt;
@@ -52,7 +52,7 @@ impl Editor {
     pub fn run_command(&mut self) -> Result<(), Box<dyn Error + 'static>> {
         let parts = self
             .command_buffer
-            .get_text()
+            .text
             .split_whitespace()
             .collect::<Vec<&str>>();
         let (&command, args) = parts.split_first().ok_or("Invalid command")?;

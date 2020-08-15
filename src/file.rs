@@ -8,7 +8,10 @@ pub fn load_file(filename: &str) -> Result<ArrayBuffer, Box<dyn Error + 'static>
     Ok(ArrayBuffer::new(content))
 }
 
-pub fn write_file(filename: &str, buffer: &ArrayBuffer) -> Result<(), Box<dyn Error + 'static>> {
-    fs::write(filename, buffer.get_text())?;
+pub fn write_file<B: TextBuffer>(
+    filename: &str,
+    buffer: &B,
+) -> Result<(), Box<dyn Error + 'static>> {
+    fs::write(filename, buffer.get_contents())?;
     Ok(())
 }
