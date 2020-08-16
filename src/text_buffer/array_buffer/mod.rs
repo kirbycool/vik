@@ -3,7 +3,6 @@ pub mod motions;
 use crate::text_buffer::{Cursor, Line, TextOps};
 use std::ops::Bound;
 use std::ops::RangeBounds;
-use tui::text::Text;
 
 pub struct ArrayBuffer {
     pub text: String,
@@ -35,7 +34,7 @@ impl ArrayBuffer {
         }
     }
 
-    fn get_line<'a>(&'a self) -> Line<'a> {
+    fn get_line(&self) -> Line {
         let mut start = 0;
         for _ in 0..self.cursor.line {
             start = self.text[start..]
@@ -47,11 +46,7 @@ impl ArrayBuffer {
             .find('\n')
             .map_or(self.text.len(), |i| i + start);
 
-        Line {
-            text: &self.text[start..end],
-            start,
-            end,
-        }
+        Line { start, end }
     }
 
     // Convert line + col to an index

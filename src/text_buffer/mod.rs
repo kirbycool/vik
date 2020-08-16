@@ -13,8 +13,7 @@ pub struct Cursor {
 }
 
 #[derive(Debug)]
-pub struct Line<'a> {
-    pub text: &'a str,
+pub struct Line {
     pub start: usize,
     pub end: usize,
 }

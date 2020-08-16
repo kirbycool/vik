@@ -12,6 +12,6 @@ pub fn write_file(
     filename: &str,
     buffer: &PieceTableBuffer,
 ) -> Result<(), Box<dyn Error + 'static>> {
-    fs::write(filename, buffer.get_text().as_str())?;
+    fs::write(filename, buffer.text_string().as_str())?;
     Ok(())
 }

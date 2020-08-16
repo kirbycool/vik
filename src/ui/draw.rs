@@ -39,9 +39,8 @@ fn draw_top_bar<B: Backend>(editor: &Editor, area: Rect, frame: &mut Frame<B>) {
 }
 
 fn draw_text<B: Backend>(editor: &mut Editor, area: Rect, frame: &mut Frame<B>) {
-    let content = editor.text_buffer.get_text();
-    let text = Text::from(content.as_str());
-    let paragraph = TextWindow::new(text, editor.text_buffer.get_cursor())
+    let text = editor.text_buffer.text();
+    let paragraph = TextWindow::new(text, editor.text_buffer.cursor())
         .style(Style::default().fg(Color::White).bg(Color::Black));
     frame.render_stateful_widget(paragraph, area, &mut editor.text_window_state);
 
@@ -54,7 +53,7 @@ fn draw_text<B: Backend>(editor: &mut Editor, area: Rect, frame: &mut Frame<B>) 
         }
 
         // Handle cursor
-        let cursor = editor.text_buffer.get_cursor();
+        let cursor = editor.text_buffer.cursor();
         let offset = editor.text_window_state.offset;
         frame.set_cursor(
             area.x + cursor.col as u16 % area.width,
@@ -65,9 +64,10 @@ fn draw_text<B: Backend>(editor: &mut Editor, area: Rect, frame: &mut Frame<B>) 
 
 fn draw_statusline<B: Backend>(editor: &Editor, area: Rect, frame: &mut Frame<B>) {
     let status = format!(
-        "{} | {}",
+        "{} | {} | Lines: {}",
         editor.mode.to_string(),
-        editor.filename.as_ref().unwrap_or(&"No File".to_string())
+        editor.filename.as_ref().unwrap_or(&"No File".to_string()),
+        editor.text_buffer.text().lines.len()
     );
     let text = Text::from(status.as_str());
     let paragraph = Paragraph::new(text).style(Style::default().bg(Color::Gray).fg(Color::Black));

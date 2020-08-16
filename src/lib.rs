@@ -1,4 +1,4 @@
-#![feature(slice_patterns, trait_alias)]
+#![feature(split_inclusive, trait_alias)]
 
 pub mod editor;
 pub mod file;
