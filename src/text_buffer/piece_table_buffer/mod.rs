@@ -1,16 +1,17 @@
 pub mod motions;
 pub mod text_ops;
 
-use crate::text_buffer::{Cursor, Line};
+use crate::text_buffer::Cursor;
 use tui::text::{Span, Spans, Text};
 
 pub struct PieceTable {
-    original: String,
-    added: String,
-    nodes: Vec<Node>,
+    pub original: String,
+    pub added: String,
+    pub nodes: Vec<Node>,
 }
 
-enum NodeSource {
+#[derive(PartialEq, Clone, Debug)]
+pub enum NodeSource {
     Original,
     Added,
 }
@@ -20,11 +21,15 @@ enum NodeSource {
  * We can build the contents by appending each node's referenced
  * text in order.
  */
-struct Node {
-    source: NodeSource,
-    start: usize,
-    length: usize,
+#[derive(Debug)]
+pub struct Node {
+    pub source: NodeSource,
+    pub start: usize,
+    pub length: usize,
+    pub newline_count: usize,
 }
+
+impl Node {}
 
 impl PieceTable {
     pub fn new(text: String) -> Self {
@@ -32,6 +37,7 @@ impl PieceTable {
             source: NodeSource::Original,
             start: 0,
             length: text.len(),
+            newline_count: text.matches('\n').count(),
         }];
         PieceTable {
             original: text,
@@ -41,14 +47,40 @@ impl PieceTable {
     }
 
     pub fn pieces<'a>(&'a self) -> impl Iterator<Item = &'a str> + 'a {
-        self.nodes.iter().map(move |node| {
-            let start = node.start;
-            let end = start + node.length;
-            match node.source {
-                NodeSource::Original => &self.original[start..end],
-                NodeSource::Added => &self.added[start..end],
-            }
-        })
+        self.nodes.iter().map(move |node| self.node_text(&node))
+    }
+
+    pub fn node_text<'a>(&'a self, node: &Node) -> &'a str {
+        let start = node.start;
+        let end = start + node.length;
+        match node.source {
+            NodeSource::Original => &self.original[start..end],
+            NodeSource::Added => &self.added[start..end],
+        }
+    }
+
+    pub fn split_node<'a>(&self, node: &Node, offset: usize) -> (Node, Node) {
+        let text = self.node_text(node);
+        let split = if offset > node.length - 1 {
+            node.length - 1
+        } else {
+            offset
+        };
+        let left = Node {
+            source: node.source.clone(),
+            start: node.start,
+            length: split,
+            newline_count: text[..split].matches('\n').count(),
+        };
+        // TODO: Return no left node if there's no content?
+        let right = Node {
+            source: node.source.clone(),
+            start: split,
+            length: node.length - split,
+            newline_count: text[split..].matches('\n').count(),
+        };
+
+        (left, right)
     }
 }
 
@@ -71,29 +103,26 @@ impl PieceTableBuffer {
 
     pub fn text(&self) -> Text {
         let mut lines: Vec<Spans> = vec![];
-        let mut overflow: Option<Span> = None;
+        let mut overflow: Vec<Span> = vec![];
 
         for piece in self.piece_table.pieces() {
             let mut chunks = piece.lines().peekable();
             while let Some(chunk) = chunks.next() {
                 // The last chunk is part of the next piece's line
                 if chunks.peek().is_none() {
-                    overflow = Some(Span::from(chunk));
+                    overflow.push(Span::from(chunk));
                     break;
                 }
 
-                let line = match overflow {
-                    Some(span) => Spans::from(vec![span, Span::from(chunk)]),
-                    None => Spans::from(chunk),
-                };
-                overflow = None;
-                lines.push(line);
+                overflow.push(Span::from(chunk));
+                lines.push(Spans::from(overflow));
+                overflow = vec![];
             }
         }
 
         // Push the last line
-        if let Some(span) = overflow {
-            lines.push(Spans::from(span));
+        if !overflow.is_empty() {
+            lines.push(Spans::from(overflow));
         }
 
         Text::from(lines)
@@ -111,42 +140,89 @@ impl PieceTableBuffer {
         }
     }
 
-    fn line_length(&self) -> usize {
-        let mut pieces = self.piece_table.pieces().peekable();
+    // (node_index, offset)
+    fn line_start(&self) -> (usize, usize) {
+        let mut nodes = self.piece_table.nodes.iter().enumerate().peekable();
         let mut lines_remaining = self.cursor.line as isize;
 
         // Iterate through pieces until we find the the line start
         while lines_remaining >= 0 {
-            let piece = match pieces.peek() {
-                Some(piece) => piece,
+            let node = match nodes.peek() {
+                Some(&(_, node)) => node,
                 None => break,
             };
-            let line_count = piece.lines().count();
 
-            if line_count as isize > lines_remaining {
+            let newline_count = node.newline_count;
+            if newline_count as isize > lines_remaining {
                 break;
             }
 
-            lines_remaining -= line_count as isize;
-            pieces.next();
+            lines_remaining -= newline_count as isize;
+            nodes.next();
         }
-
-        let piece = pieces.next().unwrap();
 
         // Find the line start
-        let mut start = 0;
+        let (node_index, node) = nodes.next().unwrap();
+        let piece = self.piece_table.node_text(&node);
+        let mut offset = 0;
         for _ in 0..lines_remaining {
-            start = piece[start..].find('\n').map_or(start, |i| start + i + 1);
+            offset = piece[offset..]
+                .find('\n')
+                .map_or(offset, |i| offset + i + 1);
         }
+        (node_index, offset)
+    }
+
+    // Find the node index and offset that corresponds to the cursor
+    fn cursor_node(&self) -> (usize, usize) {
+        let (mut node_index, mut start_offset) = self.line_start();
+        let mut cols_remaining = self.cursor.col;
+
+        while cols_remaining > 0 && node_index < self.piece_table.nodes.len() {
+            let node = &self.piece_table.nodes[node_index];
+            let text = &self.piece_table.node_text(&node)[start_offset..];
+
+            // If there's a newline in the piece, the offset is at most the end of the line
+            if let Some(line_end) = text.find('\n') {
+                if line_end > cols_remaining {
+                    return (node_index, start_offset + cols_remaining);
+                } else {
+                    return (node_index, start_offset + line_end);
+                }
+            }
+
+            // If the text is >= than cols_remaining, this is the piece
+            if text.len() >= cols_remaining {
+                return (node_index, start_offset + cols_remaining);
+            }
+
+            // Advance to the next piece
+            start_offset = 0;
+            node_index += 1;
+            cols_remaining -= text.len();
+        }
+
+        // The cursor is beyond the end
+        node_index = self.piece_table.nodes.len();
+        let node = &self.piece_table.nodes[node_index];
+        let text = self.piece_table.node_text(&node);
+        (node_index, text.len())
+    }
+
+    fn line_length(&self) -> usize {
+        let (start, offset) = self.line_start();
 
         // If the piece contains the next line too, we can figure
         // out the line length, otherwise we need to iterate more
         // pieces until we find a new line or EOF
-        match piece[start..].find('\n') {
+        let mut nodes = self.piece_table.nodes[start..].iter();
+        let piece = self.piece_table.node_text(&nodes.next().unwrap());
+        match piece[offset..].find('\n') {
             Some(i) => return i,
             None => {
-                let mut length = piece.len() - start;
-                while let Some(piece) = pieces.next() {
+                let mut length = piece.len() - offset;
+                while let Some(node) = nodes.next() {
+                    let piece = self.piece_table.node_text(&node);
                     match piece.find('\n') {
                         Some(i) => return length + i,
                         None => length += piece.len(),
@@ -159,8 +235,9 @@ impl PieceTableBuffer {
 
     fn line_count(&self) -> usize {
         self.piece_table
-            .pieces()
-            .map(|piece| piece.lines().count())
+            .nodes
+            .iter()
+            .map(|node| node.newline_count)
             .sum()
     }
 }
