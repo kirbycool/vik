@@ -6,9 +6,12 @@ use tui::backend::TermionBackend;
 use tui::Terminal;
 use vik::editor::Editor;
 use vik::input::handle_input;
+use vik::logger::init_logger;
 use vik::ui::draw;
 
 fn main() {
+    init_logger();
+
     let clap_app = App::new("Vik").arg(
         Arg::with_name("FILE")
             .index(1)

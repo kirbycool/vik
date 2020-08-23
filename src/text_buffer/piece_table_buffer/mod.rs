@@ -2,6 +2,7 @@ pub mod motions;
 pub mod text_ops;
 
 use crate::text_buffer::Cursor;
+use log::debug;
 use tui::text::{Span, Spans, Text};
 
 pub struct PieceTable {
@@ -75,7 +76,7 @@ impl PieceTable {
         // TODO: Return no left node if there's no content?
         let right = Node {
             source: node.source.clone(),
-            start: split,
+            start: node.start + split,
             length: node.length - split,
             newline_count: text[split..].matches('\n').count(),
         };
@@ -106,7 +107,7 @@ impl PieceTableBuffer {
         let mut overflow: Vec<Span> = vec![];
 
         for piece in self.piece_table.pieces() {
-            let mut chunks = piece.lines().peekable();
+            let mut chunks = piece.split('\n').peekable();
             while let Some(chunk) = chunks.next() {
                 // The last chunk is part of the next piece's line
                 if chunks.peek().is_none() {
@@ -146,7 +147,7 @@ impl PieceTableBuffer {
         let mut lines_remaining = self.cursor.line as isize;
 
         // Iterate through pieces until we find the the line start
-        while lines_remaining >= 0 {
+        while lines_remaining > 0 {
             let node = match nodes.peek() {
                 Some(&(_, node)) => node,
                 None => break,
@@ -176,34 +177,34 @@ impl PieceTableBuffer {
     // Find the node index and offset that corresponds to the cursor
     fn cursor_node(&self) -> (usize, usize) {
         let (mut node_index, mut start_offset) = self.line_start();
-        let mut cols_remaining = self.cursor.col;
+        let mut cols_remaining = self.cursor.col as isize;
 
-        while cols_remaining > 0 && node_index < self.piece_table.nodes.len() {
+        while cols_remaining >= 0 && node_index < self.piece_table.nodes.len() {
             let node = &self.piece_table.nodes[node_index];
             let text = &self.piece_table.node_text(&node)[start_offset..];
 
             // If there's a newline in the piece, the offset is at most the end of the line
             if let Some(line_end) = text.find('\n') {
-                if line_end > cols_remaining {
-                    return (node_index, start_offset + cols_remaining);
+                if line_end > cols_remaining as usize {
+                    return (node_index, start_offset + cols_remaining as usize);
                 } else {
                     return (node_index, start_offset + line_end);
                 }
             }
 
             // If the text is >= than cols_remaining, this is the piece
-            if text.len() >= cols_remaining {
-                return (node_index, start_offset + cols_remaining);
+            if text.len() >= cols_remaining as usize {
+                return (node_index, start_offset + cols_remaining as usize);
             }
 
             // Advance to the next piece
             start_offset = 0;
             node_index += 1;
-            cols_remaining -= text.len();
+            cols_remaining -= text.len() as isize;
         }
 
         // The cursor is beyond the end
-        node_index = self.piece_table.nodes.len();
+        node_index = self.piece_table.nodes.len() - 1;
         let node = &self.piece_table.nodes[node_index];
         let text = self.piece_table.node_text(&node);
         (node_index, text.len())

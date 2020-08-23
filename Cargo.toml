@@ -8,5 +8,7 @@ edition = "2018"
 
 [dependencies]
 clap = "2.33.2"
+log = "0.4.11"
+log4rs = "0.13.0"
 termion = "1.5"
 tui = "0.10"

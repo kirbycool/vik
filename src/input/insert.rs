@@ -10,6 +10,7 @@ pub fn handle_insert_input(key: Key, editor: &mut Editor) {
         }
         Key::Esc => {
             print!("{}", cursor::SteadyBlock);
+            editor.text_buffer.prev();
             editor.mode = Mode::Normal;
         }
         Key::Backspace => editor.text_buffer.delete(),
