@@ -62,7 +62,7 @@ impl PieceTable {
 
     pub fn split_node<'a>(&self, node: &Node, offset: usize) -> (Node, Node) {
         let text = self.node_text(node);
-        let split = if offset > node.length - 1 {
+        let split = if node.length > 0 && offset > node.length - 1 {
             node.length - 1
         } else {
             offset
@@ -73,7 +73,6 @@ impl PieceTable {
             length: split,
             newline_count: text[..split].matches('\n').count(),
         };
-        // TODO: Return no left node if there's no content?
         let right = Node {
             source: node.source.clone(),
             start: node.start + split,

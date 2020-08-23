@@ -2,8 +2,9 @@ use crate::text_buffer::{PieceTableBuffer, TextMotions};
 
 impl TextMotions for PieceTableBuffer {
     fn prev(&mut self) {
-        if self.cursor.col > 0 {
-            self.cursor.col -= 1;
+        let virtual_cursor = self.cursor();
+        if virtual_cursor.col > 0 {
+            self.cursor.col = virtual_cursor.col - 1;
         }
     }
 

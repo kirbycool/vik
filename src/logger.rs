@@ -2,11 +2,14 @@ use log::LevelFilter;
 use log4rs::{
     append::file::FileAppender,
     config::{Appender, Config, Root},
+    encode::pattern::PatternEncoder,
 };
 
 pub fn init_logger() {
+    let debug_encoder = PatternEncoder::new("{m}\n\n");
     let debug = FileAppender::builder()
-        .append(true)
+        .append(false)
+        .encoder(Box::new(debug_encoder))
         .build("debug.log")
         .unwrap();
     let config = Config::builder()
