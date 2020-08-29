@@ -33,7 +33,7 @@ pub fn draw<B: Backend>(editor: &mut Editor, terminal: &mut Terminal<B>) -> Resu
     })
 }
 
-fn draw_top_bar<B: Backend>(editor: &Editor, area: Rect, frame: &mut Frame<B>) {
+fn draw_top_bar<B: Backend>(_editor: &Editor, area: Rect, frame: &mut Frame<B>) {
     let block = Block::default().style(Style::default().bg(Color::Gray).fg(Color::Black));
     frame.render_widget(block, area);
 }

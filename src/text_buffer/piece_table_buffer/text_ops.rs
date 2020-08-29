@@ -7,19 +7,30 @@ impl TextOps for PieceTableBuffer {
     fn insert(&mut self, c: char) {
         let (node_index, offset) = self.cursor_node();
         let node = &self.piece_table.nodes[node_index];
-        debug!("cursor: {:?}", self.cursor);
+        let has_appendable_left_node = if node_index > 0 {
+            let n = &self.piece_table.nodes[node_index - 1];
+            offset == 0
+                && n.source == NodeSource::Added
+                && n.start + n.length == self.piece_table.added.len()
+        } else {
+            false
+        };
 
-        if node.source == NodeSource::Added
-            && node.start + node.length == self.piece_table.added.len()
-        {
+        debug!(
+            "start: {:?}, offset: {:?}, added: {:?}",
+            node.start,
+            offset,
+            self.piece_table.added.len()
+        );
+        if has_appendable_left_node {
             // If we're at the end of the added buffer, we can append to it
             // and update the node
             self.piece_table.added.push(c);
             {
-                let node = &mut self.piece_table.nodes[node_index];
-                node.length += 1;
+                let left_node = &mut self.piece_table.nodes[node_index - 1];
+                left_node.length += 1;
                 if c == '\n' {
-                    node.newline_count += 1;
+                    left_node.newline_count += 1;
                 }
             }
         } else {
@@ -53,8 +64,8 @@ impl TextOps for PieceTableBuffer {
         } else {
             self.cursor.col = self.cursor().col + 1;
         }
-
-        debug!("{:?}", self.piece_table.nodes)
+        debug!("cursor: {:?}, virtual: {:?}", self.cursor, self.cursor());
+        debug!("{:?}", self.piece_table.nodes);
     }
 
     fn delete(&mut self) {
@@ -70,13 +81,36 @@ impl TextOps for PieceTableBuffer {
             self.cursor.line -= 1;
             self.cursor.col = self.line_length();
         }
+        debug!("cursor: {:?}, virtual: {:?}", self.cursor, self.cursor());
 
         let (node_index, offset) = self.cursor_node();
         let node = &self.piece_table.nodes[node_index];
 
+        // The node has length 1, so we can remove it
+        if node.length == 0 {
+            let piece_table = &mut self.piece_table;
+            piece_table.nodes.remove(node_index);
+            return;
+        }
+
+        // We're at the beginning of the node so we can just shrink it
+        if offset == 0 {
+            let node = &mut self.piece_table.nodes[node_index];
+            node.start += 1;
+            node.length -= 1;
+            return;
+        }
+
+        // We're at the end of the node, so we shrink it
+        if offset == node.length - 1 {
+            let node = &mut self.piece_table.nodes[node_index];
+            debug!("end of node: {:?}", node);
+            node.length -= 1;
+            return;
+        }
+
+        // We have to split the node
         let (left, mut right) = self.piece_table.split_node(node, offset);
-        debug!("cursor: {:?}", self.cursor);
-        debug!("left: {:?}\nright: {:?}", left, right);
 
         if right.length > 0 {
             right.length -= 1;
@@ -91,8 +125,8 @@ impl TextOps for PieceTableBuffer {
         if left.length > 0 {
             piece_table.nodes.insert(node_index, left);
         }
-        debug!("{:?}", self.piece_table.nodes)
+        debug!("{:?}", self.piece_table.nodes);
     }
 
-    fn delete_range<R: ops::RangeBounds<usize>>(&mut self, range: R) {}
+    fn delete_range<R: ops::RangeBounds<usize>>(&mut self, _range: R) {}
 }

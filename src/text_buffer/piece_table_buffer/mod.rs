@@ -2,7 +2,6 @@ pub mod motions;
 pub mod text_ops;
 
 use crate::text_buffer::Cursor;
-use log::debug;
 use tui::text::{Span, Spans, Text};
 
 pub struct PieceTable {
@@ -29,8 +28,6 @@ pub struct Node {
     pub length: usize,
     pub newline_count: usize,
 }
-
-impl Node {}
 
 impl PieceTable {
     pub fn new(text: String) -> Self {
@@ -81,6 +78,27 @@ impl PieceTable {
         };
 
         (left, right)
+    }
+
+    pub fn newline_count(&self, node: &Node) -> usize {
+        self.node_text(node).matches('\n').count()
+    }
+
+    pub fn shrink_node_head(&self, node: &mut Node) {
+        if node.length == 0 {
+            return;
+        }
+        node.start += 1;
+        node.length -= 1;
+        node.newline_count = self.newline_count(node);
+    }
+
+    pub fn shrink_node_tail(&self, node: &mut Node) {
+        if node.length == 0 {
+            return;
+        }
+        node.length -= 1;
+        node.newline_count = self.newline_count(node);
     }
 }
 
@@ -153,7 +171,7 @@ impl PieceTableBuffer {
             };
 
             let newline_count = node.newline_count;
-            if newline_count as isize > lines_remaining {
+            if newline_count as isize >= lines_remaining {
                 break;
             }
 
@@ -191,8 +209,8 @@ impl PieceTableBuffer {
                 }
             }
 
-            // If the text is >= than cols_remaining, this is the piece
-            if text.len() >= cols_remaining as usize {
+            // The piece covers the remaining columns
+            if text.len() > cols_remaining as usize {
                 return (node_index, start_offset + cols_remaining as usize);
             }
 
