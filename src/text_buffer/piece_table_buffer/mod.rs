@@ -10,7 +10,7 @@ pub struct PieceTable {
     pub nodes: Vec<Node>,
 }
 
-#[derive(PartialEq, Clone, Debug)]
+#[derive(PartialEq, Clone, Copy, Debug)]
 pub enum NodeSource {
     Original,
     Added,
@@ -21,7 +21,7 @@ pub enum NodeSource {
  * We can build the contents by appending each node's referenced
  * text in order.
  */
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy)]
 pub struct Node {
     pub source: NodeSource,
     pub start: usize,
@@ -84,21 +84,32 @@ impl PieceTable {
         self.node_text(node).matches('\n').count()
     }
 
-    pub fn shrink_node_head(&self, node: &mut Node) {
+    pub fn shrink_node_head(&self, node: &Node) -> Node {
         if node.length == 0 {
-            return;
+            return node.clone();
         }
-        node.start += 1;
-        node.length -= 1;
-        node.newline_count = self.newline_count(node);
+        let mut new_node = Node {
+            source: node.source,
+            start: node.start + 1,
+            length: node.length - 1,
+            newline_count: node.newline_count,
+        };
+        new_node.newline_count = self.newline_count(node);
+        new_node
     }
 
-    pub fn shrink_node_tail(&self, node: &mut Node) {
+    pub fn shrink_node_tail(&self, node: &Node) -> Node {
         if node.length == 0 {
-            return;
+            return node.clone();
         }
-        node.length -= 1;
-        node.newline_count = self.newline_count(node);
+        let mut new_node = Node {
+            source: node.source,
+            start: node.start,
+            length: node.length - 1,
+            newline_count: node.newline_count,
+        };
+        new_node.newline_count = self.newline_count(node);
+        new_node
     }
 }
 

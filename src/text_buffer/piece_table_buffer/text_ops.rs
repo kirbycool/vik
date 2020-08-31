@@ -1,6 +1,7 @@
 use crate::text_buffer::piece_table_buffer::{Node, NodeSource};
 use crate::text_buffer::{PieceTableBuffer, TextOps};
 use log::debug;
+use std::mem;
 use std::ops;
 
 impl TextOps for PieceTableBuffer {
@@ -84,7 +85,7 @@ impl TextOps for PieceTableBuffer {
         debug!("cursor: {:?}, virtual: {:?}", self.cursor, self.cursor());
 
         let (node_index, offset) = self.cursor_node();
-        let node = &self.piece_table.nodes[node_index];
+        let node = self.piece_table.nodes[node_index];
 
         // The node has length 1, so we can remove it
         if node.length == 0 {
@@ -95,22 +96,20 @@ impl TextOps for PieceTableBuffer {
 
         // We're at the beginning of the node so we can just shrink it
         if offset == 0 {
-            let node = &mut self.piece_table.nodes[node_index];
-            node.start += 1;
-            node.length -= 1;
+            let new_node = self.piece_table.shrink_node_head(&node);
+            let _ = mem::replace(&mut self.piece_table.nodes[node_index], new_node);
             return;
         }
 
         // We're at the end of the node, so we shrink it
         if offset == node.length - 1 {
-            let node = &mut self.piece_table.nodes[node_index];
-            debug!("end of node: {:?}", node);
-            node.length -= 1;
+            let new_node = self.piece_table.shrink_node_tail(&node);
+            let _ = mem::replace(&mut self.piece_table.nodes[node_index], new_node);
             return;
         }
 
         // We have to split the node
-        let (left, mut right) = self.piece_table.split_node(node, offset);
+        let (left, mut right) = self.piece_table.split_node(&node, offset);
 
         if right.length > 0 {
             right.length -= 1;
