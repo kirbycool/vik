@@ -16,7 +16,6 @@ pub fn draw<B: Backend>(editor: &mut Editor, terminal: &mut Terminal<B>) -> Resu
             .direction(Direction::Vertical)
             .constraints(
                 [
-                    Constraint::Length(1),
                     Constraint::Min(10),
                     Constraint::Length(1),
                     Constraint::Length(1),
@@ -26,16 +25,10 @@ pub fn draw<B: Backend>(editor: &mut Editor, terminal: &mut Terminal<B>) -> Resu
             .split(area);
 
         // There's some bug with the first line, so skip it for now
-        draw_top_bar(editor, chunks[0], f);
-        draw_text(editor, chunks[1], f);
-        draw_statusline(editor, chunks[2], f);
-        draw_commandline(editor, chunks[3], f);
+        draw_text(editor, chunks[0], f);
+        draw_statusline(editor, chunks[1], f);
+        draw_commandline(editor, chunks[2], f);
     })
-}
-
-fn draw_top_bar<B: Backend>(_editor: &Editor, area: Rect, frame: &mut Frame<B>) {
-    let block = Block::default().style(Style::default().bg(Color::Gray).fg(Color::Black));
-    frame.render_widget(block, area);
 }
 
 fn draw_text<B: Backend>(editor: &mut Editor, area: Rect, frame: &mut Frame<B>) {
