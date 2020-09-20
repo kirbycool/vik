@@ -1,9 +1,12 @@
-use super::piece_table::PieceTable;
 use crate::text_buffer::{PieceTableBuffer, TextOps};
 use std::ops;
 
 impl TextOps for PieceTableBuffer {
     fn insert(&mut self, c: char) {
+        let cursor = self.cursor();
+        let location = self.piece_table.cursor_location(cursor.line, cursor.col);
+        self.piece_table.insert(location, c);
+
         // Update the cursor position
         if c == '\n' {
             self.cursor.col = 0;
