@@ -1,5 +1,4 @@
 use crate::text_buffer::{PieceTableBuffer, TextOps};
-use log::debug;
 use std::ops;
 
 impl TextOps for PieceTableBuffer {

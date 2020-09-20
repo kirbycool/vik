@@ -6,7 +6,7 @@ use log4rs::{
 };
 
 pub fn init_logger() {
-    let debug_encoder = PatternEncoder::new("{m}\n\n");
+    let debug_encoder = PatternEncoder::new("[DEBUG] {m}\n");
     let debug = FileAppender::builder()
         .append(false)
         .encoder(Box::new(debug_encoder))

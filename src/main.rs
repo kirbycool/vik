@@ -1,4 +1,5 @@
 use clap::{App, Arg};
+use log::debug;
 use std::io;
 use termion::input::TermRead;
 use termion::raw::IntoRawMode;
@@ -32,6 +33,8 @@ fn main() {
 
     // Initial draw
     draw(&mut editor, &mut terminal).unwrap();
+
+    debug!("Initialized");
 
     while editor.running {
         let mut should_draw = false;
