@@ -6,38 +6,6 @@ use crate::text_buffer::Cursor;
 use piece_table::PieceTable;
 use tui::text::{Span, Spans, Text};
 
-/*
-impl PieceTable {
-    pub fn shrink_node_head(&self, node: &Node) -> Node {
-        if node.length == 0 {
-            return node.clone();
-        }
-        let mut new_node = Node {
-            source: node.source,
-            start: node.start + 1,
-            length: node.length - 1,
-            newline_count: node.newline_count,
-        };
-        new_node.newline_count = self.newline_count(node);
-        new_node
-    }
-
-    pub fn shrink_node_tail(&self, node: &Node) -> Node {
-        if node.length == 0 {
-            return node.clone();
-        }
-        let mut new_node = Node {
-            source: node.source,
-            start: node.start,
-            length: node.length - 1,
-            newline_count: node.newline_count,
-        };
-        new_node.newline_count = self.newline_count(node);
-        new_node
-    }
-}
-*/
-
 pub struct PieceTableBuffer {
     pub piece_table: PieceTable,
     pub cursor: Cursor,

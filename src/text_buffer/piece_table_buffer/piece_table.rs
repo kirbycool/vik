@@ -157,6 +157,51 @@ impl PieceTable {
         }
     }
 
+    pub fn delete(&mut self, location: Location) {
+        let node = &self.nodes[location.idx];
+
+        // The node has length 1, so we can remove it
+        if node.length <= 1 {
+            self.nodes.remove(location.idx);
+            return;
+        }
+
+        // We're at the beginning of the node so we can just shrink it
+        if location.offset == 0 {
+            {
+                let node = &mut self.nodes[location.idx];
+                node.start += 1;
+                node.length -= 1;
+            }
+            return;
+        }
+
+        // We're at the end of the node, so we shrink it
+        if location.offset == node.length - 1 {
+            {
+                let node = &mut self.nodes[location.idx];
+                node.length -= 1;
+            }
+            return;
+        }
+
+        // We have to split the node
+        let (left, mut right) = node.split(location.offset);
+
+        if right.length > 0 {
+            right.length -= 1;
+            right.start += 1;
+        }
+
+        self.nodes.remove(location.idx);
+        if right.length > 0 {
+            self.nodes.insert(location.idx, right);
+        }
+        if left.length > 0 {
+            self.nodes.insert(location.idx, left);
+        }
+    }
+
     // Find the location for a line and col combo
     pub fn cursor_location(&self, line: usize, col: usize) -> Location {
         let mut location = self.line_start(line);
