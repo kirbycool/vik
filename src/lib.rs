@@ -1,4 +1,4 @@
-#![feature(split_inclusive, trait_alias)]
+#![feature(get_mut_unchecked, split_inclusive, trait_alias)]
 
 pub mod editor;
 pub mod file;
