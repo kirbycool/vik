@@ -243,7 +243,7 @@ impl PieceTable {
     }
 
     // Find the location where a given line number starts
-    fn line_start(&self, line: usize) -> Location {
+    pub fn line_start(&self, line: usize) -> Location {
         let mut location = Location { idx: 0, offset: 0 };
         let mut lines_remaining = line;
 

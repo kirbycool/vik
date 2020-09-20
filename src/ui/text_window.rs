@@ -1,9 +1,8 @@
-use crate::text_buffer::Cursor;
+use crate::text_buffer::piece_table_buffer::PieceTableBuffer;
 use tui::{
     buffer::Buffer,
     layout::Rect,
     style::Style,
-    text::Text,
     widgets::{Paragraph, StatefulWidget, Widget},
 };
 
@@ -25,19 +24,14 @@ impl TextWindowState {
 
 pub struct TextWindow<'a> {
     style: Style,
-    text: Text<'a>,
-    cursor: Cursor,
+    text_buffer: &'a PieceTableBuffer,
 }
 
 impl<'a> TextWindow<'a> {
-    pub fn new<T>(text: T, cursor: Cursor) -> TextWindow<'a>
-    where
-        T: Into<Text<'a>>,
-    {
+    pub fn new(text_buffer: &'a PieceTableBuffer) -> TextWindow<'a> {
         TextWindow {
             style: Style::default(),
-            text: text.into(),
-            cursor,
+            text_buffer,
         }
     }
 
@@ -54,20 +48,21 @@ impl<'a> StatefulWidget for TextWindow<'a> {
     type State = TextWindowState;
 
     fn render(self, area: Rect, buf: &mut Buffer, state: &mut Self::State) {
+        let cursor = self.text_buffer.cursor();
+
         // Compute new scroll offset
         let top = state.offset;
         let bottom = top + area.height as usize;
-        state.offset = if self.cursor.line < top {
-            self.cursor.line
-        } else if self.cursor.line >= bottom {
-            self.cursor.line + 1 - area.height as usize
+        state.offset = if cursor.line < top {
+            cursor.line
+        } else if cursor.line >= bottom {
+            cursor.line + 1 - area.height as usize
         } else {
             state.offset
         };
 
-        let paragraph = Paragraph::new(self.text)
-            .style(self.style)
-            .scroll((state.offset as u16, 0));
+        let paragraph = Paragraph::new(self.text_buffer.text(state.offset, area.height as usize))
+            .style(self.style);
         paragraph.render(area, buf);
     }
 }

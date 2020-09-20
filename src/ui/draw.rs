@@ -32,8 +32,7 @@ pub fn draw<B: Backend>(editor: &mut Editor, terminal: &mut Terminal<B>) -> Resu
 }
 
 fn draw_text<B: Backend>(editor: &mut Editor, area: Rect, frame: &mut Frame<B>) {
-    let text = editor.text_buffer.text();
-    let paragraph = TextWindow::new(text, editor.text_buffer.cursor())
+    let paragraph = TextWindow::new(&editor.text_buffer)
         .style(Style::default().fg(Color::White).bg(Color::Black));
     frame.render_stateful_widget(paragraph, area, &mut editor.text_window_state);
 
