@@ -1,6 +1,6 @@
 use crate::text::TextBuffer;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Copy)]
 pub struct Position {
     pub line: usize,
     pub col: usize,
@@ -44,10 +44,10 @@ impl Buffer {
             self.cursor.col -= 1
         } else {
             self.cursor.line -= 1;
-            self.cursor.col = self.text_buffer.line_length(cursor.line);
+            self.cursor.col = self.text_buffer.line_length(self.cursor.line);
         }
 
-        self.text_buffer.delete(cursor)
+        self.text_buffer.delete(self.cursor)
     }
 
     pub fn prev(&mut self) {
@@ -70,7 +70,7 @@ impl Buffer {
     }
 
     pub fn next_line(&mut self) {
-        let max_lines = self.text_buffer.line_count() + 1;
+        let max_lines = self.text_buffer.line_count();
         if self.cursor.line < max_lines - 1 {
             self.cursor.line += 1
         }
