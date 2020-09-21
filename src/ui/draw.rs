@@ -73,12 +73,12 @@ fn draw_commandline<B: Backend>(editor: &Editor, area: Rect, frame: &mut Frame<B
         return;
     }
 
-    let text = format!(":{}", editor.command_buffer.get_text());
+    let text = format!(":{}", editor.command_buffer.text_buffer.to_string());
     let paragraph = Paragraph::new(text.as_str()).style(style);
     frame.render_widget(paragraph, area);
 
     // Handle cursor
-    let cursor = &editor.command_buffer.get_cursor();
+    let cursor = &editor.command_buffer.cursor();
     print!("{}", cursor::SteadyBlock);
     frame.set_cursor(
         area.x + cursor.col as u16 + 1,

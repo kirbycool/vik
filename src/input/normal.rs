@@ -1,5 +1,4 @@
 use crate::editor::{Editor, Mode};
-use crate::text_buffer::TextBuffer;
 use termion::event::Key;
 
 pub fn handle_normal_input(key: Key, editor: &mut Editor) {

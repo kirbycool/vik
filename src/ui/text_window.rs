@@ -1,4 +1,4 @@
-use crate::text_buffer::piece_table_buffer::PieceTableBuffer;
+use crate::buffer;
 use tui::{
     buffer::Buffer,
     layout::Rect,
@@ -24,14 +24,14 @@ impl TextWindowState {
 
 pub struct TextWindow<'a> {
     style: Style,
-    text_buffer: &'a PieceTableBuffer,
+    buffer: &'a buffer::Buffer,
 }
 
 impl<'a> TextWindow<'a> {
-    pub fn new(text_buffer: &'a PieceTableBuffer) -> TextWindow<'a> {
+    pub fn new(buffer: &'a buffer::Buffer) -> TextWindow<'a> {
         TextWindow {
             style: Style::default(),
-            text_buffer,
+            buffer,
         }
     }
 
@@ -48,7 +48,7 @@ impl<'a> StatefulWidget for TextWindow<'a> {
     type State = TextWindowState;
 
     fn render(self, area: Rect, buf: &mut Buffer, state: &mut Self::State) {
-        let cursor = self.text_buffer.cursor();
+        let cursor = self.buffer.cursor();
 
         // Compute new scroll offset
         let top = state.offset;
@@ -61,8 +61,12 @@ impl<'a> StatefulWidget for TextWindow<'a> {
             state.offset
         };
 
-        let paragraph = Paragraph::new(self.text_buffer.text(state.offset, area.height as usize))
-            .style(self.style);
+        let paragraph = Paragraph::new(
+            self.buffer
+                .text_buffer
+                .to_text(state.offset, area.height as usize),
+        )
+        .style(self.style);
         paragraph.render(area, buf);
     }
 }

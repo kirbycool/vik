@@ -1,8 +1,10 @@
+use crate::buffer::Buffer;
 use crate::file::{load_file, write_file};
-use crate::text_buffer::{ArrayBuffer, PieceTableBuffer};
+use crate::text::{ArrayBuffer, PieceTableBuffer};
 use crate::ui::text_window::TextWindowState;
 use std::error::Error;
 use std::fmt;
+use std::string::ToString;
 
 #[derive(PartialEq)]
 pub enum Mode {
@@ -22,8 +24,8 @@ impl fmt::Display for Mode {
 }
 
 pub struct Editor {
-    pub text_buffer: PieceTableBuffer,
-    pub command_buffer: ArrayBuffer,
+    pub text_buffer: Buffer,
+    pub command_buffer: Buffer,
     pub mode: Mode,
     pub running: bool,
     pub filename: Option<String>,
@@ -33,8 +35,8 @@ pub struct Editor {
 impl Editor {
     pub fn new() -> Self {
         Editor {
-            text_buffer: PieceTableBuffer::new("".to_string()),
-            command_buffer: ArrayBuffer::new("".to_string()),
+            text_buffer: Buffer::new(Box::new(PieceTableBuffer::new("".to_string()))),
+            command_buffer: Buffer::new(Box::new(ArrayBuffer::new("".to_string()))),
             mode: Mode::Normal,
             running: true,
             filename: None,
@@ -50,11 +52,8 @@ impl Editor {
     }
 
     pub fn run_command(&mut self) -> Result<(), Box<dyn Error + 'static>> {
-        let parts = self
-            .command_buffer
-            .text
-            .split_whitespace()
-            .collect::<Vec<&str>>();
+        let text = self.command_buffer.text_buffer.to_string();
+        let parts = text.split_whitespace().collect::<Vec<&str>>();
         let (&command, args) = parts.split_first().ok_or("Invalid command")?;
 
         match command {

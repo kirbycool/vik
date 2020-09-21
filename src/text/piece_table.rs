@@ -2,7 +2,10 @@
 #[path = "./piece_table_test.rs"]
 mod test;
 
+use super::TextBuffer;
+use crate::buffer::Position;
 use std::rc::Rc;
+use tui::text::{Span, Spans, Text};
 
 /**
  * A reference to the node index and offset
@@ -57,23 +60,94 @@ impl Node {
     }
 }
 
-pub struct PieceTable {
+pub struct PieceTableBuffer {
     pub original: Rc<String>,
     pub added: Rc<String>,
     pub nodes: Vec<Node>,
 }
 
-impl PieceTable {
+impl PieceTableBuffer {
     pub fn new(text: String) -> Self {
         let original = Rc::new(text);
-        PieceTable {
+        PieceTableBuffer {
             original: original.clone(),
             added: Rc::new(String::new()),
             nodes: vec![Node::new(original.clone(), 0, original.len())],
         }
     }
 
-    pub fn text(&self) -> String {
+    fn location(&self, pos: Position) -> Location {
+        let mut location = self.line_start(pos.line);
+        let mut nodes = self.nodes[location.idx..].iter();
+        let mut cols_remaining = pos.col;
+
+        while let Some(node) = nodes.next() {
+            let text = &node.text()[location.offset..];
+
+            // The line ends in this node, so that's the max offset
+            if let Some(line_end) = text.find('\n') {
+                let offset = if cols_remaining > line_end {
+                    line_end
+                } else {
+                    cols_remaining
+                };
+                location.offset += offset;
+                return location;
+            }
+
+            // The cursor is in this node
+            if text.len() > cols_remaining {
+                location.offset += cols_remaining;
+                return location;
+            }
+
+            // The cursor is in a subsequent node
+            location.idx += 1;
+            location.offset = 0;
+            cols_remaining -= text.len();
+        }
+
+        // The cursor is beyond the end. We use an index that's currently
+        // out of bounds but references where a new node will be added
+        // TODO: Fix the unsafe idx.
+        location.idx = self.nodes.len();
+        location.offset = 0;
+        location
+    }
+
+    // Find the location where a given line number starts
+    fn line_start(&self, line: usize) -> Location {
+        let mut location = Location { idx: 0, offset: 0 };
+        let mut lines_remaining = line;
+
+        let mut nodes = self.nodes.iter();
+        while let Some(node) = nodes.next() {
+            if node.newline_count >= lines_remaining {
+                let mut offset = 0;
+                for _ in 0..lines_remaining {
+                    offset = node.text()[offset..]
+                        .find('\n')
+                        .map_or(offset, |i| offset + i + 1);
+                }
+                location.offset = offset;
+                return location;
+            }
+
+            lines_remaining -= node.newline_count;
+            location.idx += 1;
+        }
+
+        // The cursor is beyond the end. We use an index that's currently
+        // out of bounds but references where a new node will be added
+        // TODO: Fix the unsafe idx.
+        location.idx = self.nodes.len();
+        location.offset = 0;
+        location
+    }
+}
+
+impl TextBuffer for PieceTableBuffer {
+    fn to_string(&self) -> String {
         self.nodes
             .iter()
             .map(|node| node.text())
@@ -81,7 +155,53 @@ impl PieceTable {
             .join("")
     }
 
-    pub fn line_length(&self, line: usize) -> usize {
+    fn to_text(&self, start: usize, count: usize) -> Text {
+        let mut lines: Vec<Spans> = vec![];
+        let mut overflow: Vec<Span> = vec![];
+
+        let line_loc = self.line_start(start);
+        let mut offset = line_loc.offset;
+        let mut nodes = self.nodes[line_loc.idx..].iter();
+        while lines.len() < count {
+            let node = match nodes.next() {
+                Some(node) => node,
+                None => break,
+            };
+
+            let mut chunks = node.text()[offset..].split('\n').peekable();
+            while let Some(chunk) = chunks.next() {
+                // If we've captured enough lines, we can break
+                if lines.len() >= count {
+                    break;
+                }
+
+                // The last chunk is part of the next piece's line
+                if chunks.peek().is_none() {
+                    overflow.push(Span::from(chunk));
+                    break;
+                }
+
+                overflow.push(Span::from(chunk));
+                lines.push(Spans::from(overflow));
+                overflow = vec![];
+            }
+
+            offset = 0; // Only offset on the first node
+        }
+
+        // Push the last line
+        if !overflow.is_empty() {
+            lines.push(Spans::from(overflow));
+        }
+
+        Text::from(lines)
+    }
+
+    fn line_count(&self) -> usize {
+        self.nodes.iter().map(|node| node.newline_count).sum()
+    }
+
+    fn line_length(&self, line: usize) -> usize {
         let loc = self.line_start(line);
 
         // If the piece contains the next line too, we can figure
@@ -105,7 +225,9 @@ impl PieceTable {
         length
     }
 
-    pub fn insert(&mut self, location: Location, c: char) {
+    fn insert(&mut self, pos: Position, c: char) {
+        let location = self.location(pos);
+
         // Because the added vector is append only, all slice refs
         // will remain valid.
         unsafe {
@@ -157,7 +279,8 @@ impl PieceTable {
         }
     }
 
-    pub fn delete(&mut self, location: Location) {
+    fn delete(&mut self, pos: Position) {
+        let location = self.location(pos);
         let node = &self.nodes[location.idx];
 
         // The node has length 1, so we can remove it
@@ -200,75 +323,5 @@ impl PieceTable {
         if left.length > 0 {
             self.nodes.insert(location.idx, left);
         }
-    }
-
-    // Find the location for a line and col combo
-    pub fn cursor_location(&self, line: usize, col: usize) -> Location {
-        let mut location = self.line_start(line);
-        let mut nodes = self.nodes[location.idx..].iter();
-        let mut cols_remaining = col;
-
-        while let Some(node) = nodes.next() {
-            let text = &node.text()[location.offset..];
-
-            // The line ends in this node, so that's the max offset
-            if let Some(line_end) = text.find('\n') {
-                let offset = if cols_remaining > line_end {
-                    line_end
-                } else {
-                    cols_remaining
-                };
-                location.offset += offset;
-                return location;
-            }
-
-            // The cursor is in this node
-            if text.len() > cols_remaining {
-                location.offset += cols_remaining;
-                return location;
-            }
-
-            // The cursor is in a subsequent node
-            location.idx += 1;
-            location.offset = 0;
-            cols_remaining -= text.len();
-        }
-
-        // The cursor is beyond the end. We use an index that's currently
-        // out of bounds but references where a new node will be added
-        // TODO: Fix the unsafe idx.
-        location.idx = self.nodes.len();
-        location.offset = 0;
-        location
-    }
-
-    // Find the location where a given line number starts
-    pub fn line_start(&self, line: usize) -> Location {
-        let mut location = Location { idx: 0, offset: 0 };
-        let mut lines_remaining = line;
-
-        let mut nodes = self.nodes.iter();
-        while let Some(node) = nodes.next() {
-            if node.newline_count >= lines_remaining {
-                let mut offset = 0;
-                for _ in 0..lines_remaining {
-                    offset = node.text()[offset..]
-                        .find('\n')
-                        .map_or(offset, |i| offset + i + 1);
-                }
-                location.offset = offset;
-                return location;
-            }
-
-            lines_remaining -= node.newline_count;
-            location.idx += 1;
-        }
-
-        // The cursor is beyond the end. We use an index that's currently
-        // out of bounds but references where a new node will be added
-        // TODO: Fix the unsafe idx.
-        location.idx = self.nodes.len();
-        location.offset = 0;
-        location
     }
 }
