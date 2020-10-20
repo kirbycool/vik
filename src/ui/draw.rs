@@ -1,4 +1,6 @@
 use crate::editor::{Editor, Mode};
+use crate::state::State;
+use crate::text::TextBuffer;
 use crate::ui::text_window::TextWindow;
 use std::io;
 use termion::cursor;
@@ -67,18 +69,21 @@ fn draw_statusline<B: Backend>(editor: &Editor, area: Rect, frame: &mut Frame<B>
 
 fn draw_commandline<B: Backend>(editor: &Editor, area: Rect, frame: &mut Frame<B>) {
     let style = Style::default().bg(Color::Black).fg(Color::White);
-    if editor.mode != Mode::Command {
-        let block = Block::default().style(style);
-        frame.render_widget(block, area);
-        return;
-    }
+    let state = match editor.state() {
+        State::Command(s) => s,
+        _ => {
+            let block = Block::default().style(style);
+            frame.render_widget(block, area);
+            return;
+        }
+    };
 
-    let text = format!(":{}", editor.command_buffer.text_buffer.to_string());
+    let text = format!(":{}", state.buffer.text_buffer.to_string());
     let paragraph = Paragraph::new(text.as_str()).style(style);
     frame.render_widget(paragraph, area);
 
     // Handle cursor
-    let cursor = &editor.command_buffer.cursor();
+    let cursor = &state.buffer.cursor();
     print!("{}", cursor::SteadyBlock);
     frame.set_cursor(
         area.x + cursor.col as u16 + 1,

@@ -6,6 +6,7 @@ use termion::raw::IntoRawMode;
 use tui::backend::TermionBackend;
 use tui::Terminal;
 use vik::editor::Editor;
+use vik::event::Event;
 use vik::input::handle_input;
 use vik::logger::init_logger;
 use vik::ui::draw;
@@ -40,7 +41,7 @@ fn main() {
         let mut should_draw = false;
 
         if let Some(Ok(key)) = keys.next() {
-            handle_input(key, &mut editor);
+            editor.handle_event(Event::Key(key));
             should_draw = true;
         }
 

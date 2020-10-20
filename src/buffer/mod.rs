@@ -6,13 +6,14 @@ pub struct Position {
     pub col: usize,
 }
 
-pub struct Buffer {
+#[derive(Debug, Clone)]
+pub struct Buffer<T: TextBuffer> {
     pub cursor: Position,
-    pub text_buffer: Box<dyn TextBuffer>,
+    pub text_buffer: Box<T>,
 }
 
-impl Buffer {
-    pub fn new(text_buffer: Box<dyn TextBuffer>) -> Self {
+impl<T: TextBuffer> Buffer<T> {
+    pub fn new(text_buffer: Box<T>) -> Self {
         Buffer {
             cursor: Position { line: 0, col: 0 },
             text_buffer,

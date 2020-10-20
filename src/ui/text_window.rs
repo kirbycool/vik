@@ -1,4 +1,5 @@
 use crate::buffer;
+use crate::text::{PieceTableBuffer, TextBuffer};
 use tui::{
     buffer::Buffer,
     layout::Rect,
@@ -24,18 +25,18 @@ impl TextWindowState {
 
 pub struct TextWindow<'a> {
     style: Style,
-    buffer: &'a buffer::Buffer,
+    buffer: &'a buffer::Buffer<PieceTableBuffer>,
 }
 
 impl<'a> TextWindow<'a> {
-    pub fn new(buffer: &'a buffer::Buffer) -> TextWindow<'a> {
+    pub fn new(buffer: &'a buffer::Buffer<PieceTableBuffer>) -> Self {
         TextWindow {
             style: Style::default(),
             buffer,
         }
     }
 
-    pub fn style(mut self, style: Style) -> TextWindow<'a> {
+    pub fn style(mut self, style: Style) -> Self {
         self.style = style;
         self
     }

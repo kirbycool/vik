@@ -1,9 +1,10 @@
 mod array;
 mod piece_table;
 
-use crate::buffer::Position;
 pub use array::ArrayBuffer;
 pub use piece_table::PieceTableBuffer;
+
+use crate::buffer::Position;
 use tui::text::Text;
 
 pub trait TextBuffer {

@@ -1,8 +1,10 @@
 use crate::buffer::Buffer;
-use crate::file::{load_file, write_file};
-use crate::text::{ArrayBuffer, PieceTableBuffer};
+use crate::event::Event;
+use crate::file::load_file;
+use crate::state::{NormalState, State};
+use crate::text::PieceTableBuffer;
 use crate::ui::text_window::TextWindowState;
-use std::error::Error;
+use std::cell::RefCell;
 use std::fmt;
 use std::string::ToString;
 
@@ -24,9 +26,9 @@ impl fmt::Display for Mode {
 }
 
 pub struct Editor {
-    pub text_buffer: Buffer,
-    pub command_buffer: Buffer,
+    pub text_buffer: Buffer<PieceTableBuffer>,
     pub mode: Mode,
+    pub state_stack: Vec<State>,
     pub running: bool,
     pub filename: Option<String>,
     pub text_window_state: TextWindowState,
@@ -36,12 +38,16 @@ impl Editor {
     pub fn new() -> Self {
         Editor {
             text_buffer: Buffer::new(Box::new(PieceTableBuffer::new("".to_string()))),
-            command_buffer: Buffer::new(Box::new(ArrayBuffer::new("".to_string()))),
             mode: Mode::Normal,
+            state_stack: vec![State::Normal(NormalState::new())],
             running: true,
             filename: None,
             text_window_state: TextWindowState::new(),
         }
+    }
+
+    pub fn state(&self) -> &State {
+        self.state_stack.last().unwrap()
     }
 
     pub fn from_file(filename: String) -> Self {
@@ -51,33 +57,9 @@ impl Editor {
         editor
     }
 
-    pub fn run_command(&mut self) -> Result<(), Box<dyn Error + 'static>> {
-        let text = self.command_buffer.text_buffer.to_string();
-        let parts = text.split_whitespace().collect::<Vec<&str>>();
-        let (&command, args) = parts.split_first().ok_or("Invalid command")?;
-
-        match command {
-            "q" => self.running = false,
-            "w" => match args {
-                [] => {
-                    if let Some(filename) = &self.filename {
-                        write_file(filename.as_str(), &self.text_buffer)?;
-                    }
-                }
-                [filename] => {
-                    write_file(filename, &self.text_buffer)?;
-                }
-                _ => (),
-            },
-            "edit" | "e" => match args {
-                [filename] => {
-                    self.filename = Some(filename.to_string());
-                    self.text_buffer = load_file(filename).unwrap();
-                }
-                _ => (),
-            },
-            _ => (),
-        };
-        Ok(())
+    pub fn handle_event(&mut self, event: Event) {
+        let mut state = self.state_stack.pop().unwrap();
+        let mut new_states = state.handle_event(event, self);
+        self.state_stack.append(&mut new_states)
     }
 }
