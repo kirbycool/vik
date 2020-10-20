@@ -4,30 +4,10 @@ use crate::file::load_file;
 use crate::state::{NormalState, State};
 use crate::text::PieceTableBuffer;
 use crate::ui::text_window::TextWindowState;
-use std::cell::RefCell;
-use std::fmt;
 use std::string::ToString;
-
-#[derive(PartialEq)]
-pub enum Mode {
-    Insert,
-    Normal,
-    Command,
-}
-
-impl fmt::Display for Mode {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match self {
-            Mode::Insert => write!(f, "INSERT"),
-            Mode::Normal => write!(f, "NORMAL"),
-            Mode::Command => write!(f, "COMMAND"),
-        }
-    }
-}
 
 pub struct Editor {
     pub text_buffer: Buffer<PieceTableBuffer>,
-    pub mode: Mode,
     pub state_stack: Vec<State>,
     pub running: bool,
     pub filename: Option<String>,
@@ -38,11 +18,18 @@ impl Editor {
     pub fn new() -> Self {
         Editor {
             text_buffer: Buffer::new(Box::new(PieceTableBuffer::new("".to_string()))),
-            mode: Mode::Normal,
             state_stack: vec![State::Normal(NormalState::new())],
             running: true,
             filename: None,
             text_window_state: TextWindowState::new(),
+        }
+    }
+
+    pub fn mode(&self) -> &str {
+        match self.state() {
+            State::Insert(_) => "INSERT",
+            State::Normal(_) => "NORMAL",
+            State::Command(_) => "COMMAND",
         }
     }
 
@@ -58,7 +45,7 @@ impl Editor {
     }
 
     pub fn handle_event(&mut self, event: Event) {
-        let mut state = self.state_stack.pop().unwrap();
+        let state = self.state_stack.pop().unwrap();
         let mut new_states = state.handle_event(event, self);
         self.state_stack.append(&mut new_states)
     }

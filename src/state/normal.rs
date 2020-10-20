@@ -1,4 +1,4 @@
-use super::{CommandState, State};
+use super::{CommandState, InsertState, State};
 use crate::editor::Editor;
 use crate::event::Event;
 use termion::event::Key;
@@ -23,15 +23,14 @@ impl NormalState {
             Key::Char(':') => {
                 return vec![State::Normal(self), State::Command(CommandState::new())];
             }
-            /*
             Key::Char('i') => {
-                editor.mode = Mode::Insert;
+                return vec![State::Normal(self), State::Insert(InsertState::new())];
             }
             Key::Char('a') => {
                 editor.text_buffer.next();
-                editor.mode = Mode::Insert;
+                return vec![State::Normal(self), State::Insert(InsertState::new())];
             }
-            */
+
             // Motions
             Key::Left | Key::Char('h') => editor.text_buffer.prev(),
             Key::Right | Key::Char('l') => editor.text_buffer.next(),

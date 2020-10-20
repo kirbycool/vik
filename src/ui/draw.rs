@@ -1,4 +1,4 @@
-use crate::editor::{Editor, Mode};
+use crate::editor::Editor;
 use crate::state::State;
 use crate::text::TextBuffer;
 use crate::ui::text_window::TextWindow;
@@ -38,28 +38,32 @@ fn draw_text<B: Backend>(editor: &mut Editor, area: Rect, frame: &mut Frame<B>) 
         .style(Style::default().fg(Color::White).bg(Color::Black));
     frame.render_stateful_widget(paragraph, area, &mut editor.text_window_state);
 
-    if editor.mode == Mode::Normal || editor.mode == Mode::Insert {
-        if editor.mode == Mode::Normal {
-            print!("{}", cursor::SteadyBlock);
-        }
-        if editor.mode == Mode::Insert {
-            print!("{}", cursor::SteadyBar);
-        }
-
-        // Handle cursor
-        let cursor = editor.text_buffer.cursor();
-        let offset = editor.text_window_state.offset;
-        frame.set_cursor(
-            area.x + cursor.col as u16 % area.width,
-            area.y + cursor.line as u16 + cursor.col as u16 / area.width - offset as u16,
-        )
+    // Draw the cursor in the text
+    let state = editor.state();
+    match state {
+        State::Normal(_) | State::Insert(_) => (),
+        _ => return,
     }
+
+    if let State::Normal(_) = state {
+        print!("{}", cursor::SteadyBlock);
+    }
+    if let State::Insert(_) = state {
+        print!("{}", cursor::SteadyBar);
+    }
+
+    let cursor = editor.text_buffer.cursor();
+    let offset = editor.text_window_state.offset;
+    frame.set_cursor(
+        area.x + cursor.col as u16 % area.width,
+        area.y + cursor.line as u16 + cursor.col as u16 / area.width - offset as u16,
+    )
 }
 
 fn draw_statusline<B: Backend>(editor: &Editor, area: Rect, frame: &mut Frame<B>) {
     let status = format!(
         "{} | {}",
-        editor.mode.to_string(),
+        editor.mode(),
         editor.filename.as_ref().unwrap_or(&"No File".to_string()),
     );
     let text = Text::from(status.as_str());

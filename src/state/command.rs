@@ -34,7 +34,7 @@ impl CommandState {
                 self.buffer.insert(c);
             }
             Key::Esc => {
-                editor.state_stack.pop();
+                return vec![];
             }
             Key::Backspace => self.buffer.delete(),
             Key::Left => self.buffer.prev(),

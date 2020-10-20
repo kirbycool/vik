@@ -64,11 +64,7 @@ impl TextBuffer for ArrayBuffer {
 
     fn delete(&mut self, pos: Position) {
         let idx = self.pos_idx(pos);
-        if idx == 0 {
-            return;
-        }
-
-        self.text.remove(idx - 1);
+        self.text.remove(idx);
     }
 
     fn line_length(&self, n: usize) -> usize {

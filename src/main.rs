@@ -7,9 +7,10 @@ use tui::backend::TermionBackend;
 use tui::Terminal;
 use vik::editor::Editor;
 use vik::event::Event;
-use vik::input::handle_input;
 use vik::logger::init_logger;
 use vik::ui::draw;
+
+// bye
 
 fn main() {
     init_logger();
