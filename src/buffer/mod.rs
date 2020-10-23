@@ -6,6 +6,24 @@ pub struct Position {
     pub col: usize,
 }
 
+impl Position {
+    fn new(line: usize, col: usize) -> Self {
+        Position { line, col }
+    }
+}
+
+#[derive(Debug, Clone, Copy)]
+pub struct Range {
+    pub start: Position,
+    pub length: usize,
+}
+
+impl Range {
+    fn new(start: Position, length: usize) -> Self {
+        Position { start, length }
+    }
+}
+
 #[derive(Debug, Clone)]
 pub struct Buffer<T: TextBuffer> {
     pub cursor: Position,
@@ -15,7 +33,7 @@ pub struct Buffer<T: TextBuffer> {
 impl<T: TextBuffer> Buffer<T> {
     pub fn new(text_buffer: Box<T>) -> Self {
         Buffer {
-            cursor: Position { line: 0, col: 0 },
+            cursor: Position::new(0, 0),
             text_buffer,
         }
     }
@@ -83,6 +101,19 @@ impl<T: TextBuffer> Buffer<T> {
 
     pub fn end_line(&mut self) {
         self.cursor.col = self.text_buffer.line_length(self.cursor.line);
+    }
+
+    pub fn line_above(&mut self) {
+        let line = self.cursor.line;
+        self.text_buffer.insert(Position::new(line, 0), '\n');
+        self.cursor = Position::new(line, 0);
+    }
+
+    pub fn line_below(&mut self) {
+        let line = self.cursor.line;
+        let col = self.text_buffer.line_length(line);
+        self.text_buffer.insert(Position::new(line, col), '\n');
+        self.cursor = Position::new(line + 1, 0);
     }
 
     pub fn cursor(&self) -> Position {

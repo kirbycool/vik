@@ -1,8 +1,10 @@
 mod command;
+mod delete_operator;
 mod insert;
 mod normal;
 
 pub use command::CommandState;
+pub use delete_operator::DeleteOperatorState;
 pub use insert::InsertState;
 pub use normal::NormalState;
 
@@ -10,9 +12,12 @@ use crate::editor::Editor;
 use crate::event::Event;
 
 pub enum State {
-    Command(CommandState),
     Normal(NormalState),
+    DeleteOperator(DeleteOperatorState),
+
     Insert(InsertState),
+
+    Command(CommandState),
 }
 
 impl State {
