@@ -7,6 +7,27 @@ pub use piece_table::PieceTableBuffer;
 use crate::buffer::Position;
 use tui::text::Text;
 
+#[derive(Debug, Clone, Copy)]
+pub struct Range {
+    pub start: Position,
+    pub length: usize,
+}
+
+impl Range {
+    fn new(start: Position, length: usize) -> Self {
+        Range { start, length }
+    }
+}
+
+impl From<Position> for Range {
+    fn from(pos: Position) -> Self {
+        Range {
+            start: pos,
+            length: 1,
+        }
+    }
+}
+
 pub trait TextBuffer {
     fn to_string(&self) -> String;
 
@@ -14,7 +35,7 @@ pub trait TextBuffer {
 
     fn insert(&mut self, pos: Position, c: char);
 
-    fn delete(&mut self, pos: Position);
+    fn delete<T: Into<Range>>(&mut self, range: T);
 
     fn line_length(&self, n: usize) -> usize;
 

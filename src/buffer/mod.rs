@@ -12,18 +12,6 @@ impl Position {
     }
 }
 
-#[derive(Debug, Clone, Copy)]
-pub struct Range {
-    pub start: Position,
-    pub length: usize,
-}
-
-impl Range {
-    fn new(start: Position, length: usize) -> Self {
-        Position { start, length }
-    }
-}
-
 #[derive(Debug, Clone)]
 pub struct Buffer<T: TextBuffer> {
     pub cursor: Position,

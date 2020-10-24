@@ -1,4 +1,4 @@
-use super::TextBuffer;
+use super::{Range, TextBuffer};
 use crate::buffer::Position;
 use tui::text::{Spans, Text};
 
@@ -62,8 +62,9 @@ impl TextBuffer for ArrayBuffer {
         self.text.insert(idx, c);
     }
 
-    fn delete(&mut self, pos: Position) {
-        let idx = self.pos_idx(pos);
+    fn delete<T: Into<Range>>(&mut self, range: T) {
+        let range = range.into();
+        let idx = self.pos_idx(range.start);
         self.text.remove(idx);
     }
 

@@ -2,7 +2,7 @@
 #[path = "./piece_table_test.rs"]
 mod test;
 
-use super::TextBuffer;
+use super::{Range, TextBuffer};
 use crate::buffer::Position;
 use std::rc::Rc;
 use tui::text::{Span, Spans, Text};
@@ -279,22 +279,44 @@ impl TextBuffer for PieceTableBuffer {
         }
     }
 
-    fn delete(&mut self, pos: Position) {
-        let location = self.location(pos);
+    fn delete<T: Into<Range>>(&mut self, range: T) {
+        let range = range.into();
+        let location = self.location(range.start);
         let node = &self.nodes[location.idx];
 
-        // The node has length 1, so we can remove it
-        if node.length <= 1 {
-            self.nodes.remove(location.idx);
+        let mut offset = location.offset;
+        let mut node_idx = location.idx;
+        let mut remaining = range.length;
+        while remaining > 0 {
+            // We can truncate the node
+            let node_remaining = node.length - offset;
+
+            if node_remaining > remaining {
+                break;
+            }
+
+            if offset == 0 {
+                self.nodes.remove(node_idx);
+            } else {
+                {
+                    let node = &mut self.nodes[location.idx];
+                    node.length -= node_remaining;
+                }
+            }
+            remaining -= node_remaining;
+            offset = 0;
+        }
+
+        if remaining == 0 {
             return;
         }
 
         // We're at the beginning of the node so we can just shrink it
-        if location.offset == 0 {
+        if offset == 0 {
             {
                 let node = &mut self.nodes[location.idx];
-                node.start += 1;
-                node.length -= 1;
+                node.start += remaining;
+                node.length -= remaining;
             }
             return;
         }
@@ -303,7 +325,7 @@ impl TextBuffer for PieceTableBuffer {
         if location.offset == node.length - 1 {
             {
                 let node = &mut self.nodes[location.idx];
-                node.length -= 1;
+                node.length -= remaining;
             }
             return;
         }
@@ -312,8 +334,8 @@ impl TextBuffer for PieceTableBuffer {
         let (left, mut right) = node.split(location.offset);
 
         if right.length > 0 {
-            right.length -= 1;
-            right.start += 1;
+            right.length -= remaining;
+            right.start += remaining;
         }
 
         self.nodes.remove(location.idx);
