@@ -2,6 +2,7 @@ use crate::editor::Editor;
 use crate::state::State;
 use crate::text::TextBuffer;
 use crate::ui::text_window::TextWindow;
+use log::debug;
 use std::io;
 use termion::cursor;
 use tui::backend::Backend;
@@ -41,7 +42,7 @@ fn draw_text<B: Backend>(editor: &mut Editor, area: Rect, frame: &mut Frame<B>) 
     // Draw the cursor in the text
     let state = editor.state();
     match state {
-        State::Normal(_) | State::Insert(_) => (),
+        State::Normal(_) | State::Insert(_) | State::DeleteOperator(_) => (),
         _ => return,
     }
 
@@ -50,6 +51,9 @@ fn draw_text<B: Backend>(editor: &mut Editor, area: Rect, frame: &mut Frame<B>) 
     }
     if let State::Insert(_) = state {
         print!("{}", cursor::SteadyBar);
+    }
+    if let State::DeleteOperator(_) = state {
+        print!("{}", cursor::SteadyUnderline);
     }
 
     let cursor = editor.text_buffer.cursor();

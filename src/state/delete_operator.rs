@@ -1,10 +1,11 @@
 use super::State;
 use crate::editor::Editor;
 use crate::event::Event;
+use crate::text::TextBuffer;
 use crate::text_object::TextObject;
 use termion::event::Key;
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct DeleteOperatorState {}
 
 impl DeleteOperatorState {
@@ -23,6 +24,9 @@ impl DeleteOperatorState {
             Key::Char('d') => {
                 let line = editor.text_buffer.cursor.line;
                 let text_object = TextObject::linewise(line, line);
+                let range = text_object.range(editor.text_buffer.text_buffer.as_ref());
+                let text = &mut editor.text_buffer.text_buffer;
+                text.as_mut().delete(range);
             }
             _ => (),
         }

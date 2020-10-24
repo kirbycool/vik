@@ -3,7 +3,7 @@ use crate::editor::Editor;
 use crate::event::Event;
 use termion::event::Key;
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct NormalState {}
 
 impl NormalState {

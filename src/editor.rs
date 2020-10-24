@@ -31,7 +31,7 @@ impl Editor {
             State::Command(_) => "COMMAND",
 
             State::Normal(_) => "NORMAL",
-            State::DeleteOperator(_) => "NORMAL",
+            State::DeleteOperator(_) => "DELETE",
         }
     }
 

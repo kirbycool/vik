@@ -7,7 +7,7 @@ pub struct Position {
 }
 
 impl Position {
-    fn new(line: usize, col: usize) -> Self {
+    pub fn new(line: usize, col: usize) -> Self {
         Position { line, col }
     }
 }
