@@ -26,6 +26,7 @@ impl State {
             State::Normal(s) => s.handle_event(event, editor),
             State::Command(s) => s.handle_event(event, editor),
             State::Insert(s) => s.handle_event(event, editor),
+            State::DeleteOperator(s) => s.handle_event(event, editor),
         }
     }
 }

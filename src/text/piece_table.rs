@@ -269,81 +269,46 @@ impl TextBuffer for PieceTableBuffer {
         let new_node = Node::new(self.added.clone(), self.added.len() - 1, 1);
 
         // Replace the old node with the new nodes
-        self.nodes.remove(location.idx);
-        if right.length > 0 {
-            self.nodes.insert(location.idx, right);
-        }
-        self.nodes.insert(location.idx, new_node);
-        if left.length > 0 {
-            self.nodes.insert(location.idx, left);
-        }
+        let new_nodes = [left, new_node, right];
+        self.nodes.splice(
+            location.idx..=location.idx,
+            new_nodes.iter().filter(|node| node.length != 0).cloned(),
+        );
     }
 
     fn delete<T: Into<Range>>(&mut self, range: T) {
         let range = range.into();
         let location = self.location(range.start);
-        let node = &self.nodes[location.idx];
 
         let mut offset = location.offset;
         let mut node_idx = location.idx;
-        let mut remaining = range.length;
+        let mut remaining = range.length as isize;
+        let mut new_left: Option<Node> = None;
+        let mut new_right: Option<Node> = None;
         while remaining > 0 {
-            // We can truncate the node
+            let node = &self.nodes[node_idx];
+
             let node_remaining = node.length - offset;
-
-            if node_remaining > remaining {
-                break;
+            if node_remaining > remaining as usize {
+                let (_, right) = node.split(offset + remaining as usize);
+                new_right = Some(right);
             }
 
-            if offset == 0 {
-                self.nodes.remove(node_idx);
-            } else {
-                {
-                    let node = &mut self.nodes[location.idx];
-                    node.length -= node_remaining;
-                }
+            if offset != 0 {
+                let (left, _) = node.split(offset);
+                new_left = Some(left);
             }
-            remaining -= node_remaining;
+            remaining -= node_remaining as isize;
             offset = 0;
+            node_idx += 1;
         }
 
-        if remaining == 0 {
-            return;
-        }
-
-        // We're at the beginning of the node so we can just shrink it
-        if offset == 0 {
-            {
-                let node = &mut self.nodes[location.idx];
-                node.start += remaining;
-                node.length -= remaining;
-            }
-            return;
-        }
-
-        // We're at the end of the node, so we shrink it
-        if location.offset == node.length - 1 {
-            {
-                let node = &mut self.nodes[location.idx];
-                node.length -= remaining;
-            }
-            return;
-        }
-
-        // We have to split the node
-        let (left, mut right) = node.split(location.offset);
-
-        if right.length > 0 {
-            right.length -= remaining;
-            right.start += remaining;
-        }
-
-        self.nodes.remove(location.idx);
-        if right.length > 0 {
-            self.nodes.insert(location.idx, right);
-        }
-        if left.length > 0 {
-            self.nodes.insert(location.idx, left);
-        }
+        let new_nodes = [new_left, new_right];
+        self.nodes.splice(
+            location.idx..node_idx,
+            new_nodes
+                .iter()
+                .filter_map(|node| node.clone().filter(|node| node.length != 0)),
+        );
     }
 }

@@ -24,6 +24,7 @@ impl DeleteOperatorState {
                 let line = editor.text_buffer.cursor.line;
                 let text_object = TextObject::linewise(line, line);
             }
+            _ => (),
         }
         vec![]
     }

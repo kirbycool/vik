@@ -1,5 +1,6 @@
 use super::*;
 use crate::buffer::Position;
+use crate::text::Range;
 use std::rc::Rc;
 
 fn pos(line: usize, col: usize) -> Position {
@@ -73,7 +74,6 @@ fn test_delete() {
     table.delete(pos(0, 0));
     table.delete(pos(0, 0));
     table.delete(pos(0, 0));
-    println!("{:?}", table.nodes);
     assert_eq!(table.to_string(), "uick\nbrown fox\njumps".to_string());
     assert_eq!(table.nodes.len(), 3);
 
@@ -84,16 +84,19 @@ fn test_delete() {
     table.delete(pos(2, 1));
     table.delete(pos(2, 0));
     table.delete(pos(1, 9));
-    println!("{:?}", table.nodes);
     assert_eq!(table.to_string(), "uick\nbrown fox".to_string());
     assert_eq!(table.nodes.len(), 2);
 
     // From the middle
     table.delete(pos(1, 7));
     table.delete(pos(1, 6));
-    println!("{:?}", table.nodes);
     assert_eq!(table.to_string(), "uick\nbrown x".to_string());
     assert_eq!(table.nodes.len(), 3);
+
+    // Range
+    table.delete(Range::new(pos(0, 2), 5));
+    assert_eq!(table.to_string(), "uiown x".to_string());
+    assert_eq!(table.nodes.len(), 4);
 }
 
 #[test]

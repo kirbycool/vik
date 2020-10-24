@@ -28,8 +28,10 @@ impl Editor {
     pub fn mode(&self) -> &str {
         match self.state() {
             State::Insert(_) => "INSERT",
-            State::Normal(_) => "NORMAL",
             State::Command(_) => "COMMAND",
+
+            State::Normal(_) => "NORMAL",
+            State::DeleteOperator(_) => "NORMAL",
         }
     }
 
