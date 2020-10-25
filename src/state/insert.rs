@@ -24,6 +24,7 @@ impl InsertState {
             }
             Key::Esc => {
                 editor.text_buffer.prev();
+                editor.text_buffer.text_buffer.cache_idx = None;
                 return vec![];
             }
             Key::Backspace => editor.text_buffer.delete(),

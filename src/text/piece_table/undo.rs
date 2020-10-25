@@ -1,13 +1,14 @@
-use super::{Node, PieceTableBuffer};
+use super::{Piece, PieceTableBuffer};
 
+#[derive(Debug)]
 pub struct UndoStep {
-    pieces: Vec<Node>,
-    start: usize,
-    end: usize,
+    pub pieces: Vec<Piece>,
+    pub start: usize,
+    pub end: usize,
 }
 
 impl UndoStep {
-    pub fn new(start: usize, end: usize, pieces: Vec<Node>) -> Self {
+    pub fn new(start: usize, end: usize, pieces: Vec<Piece>) -> Self {
         UndoStep { start, end, pieces }
     }
 }
@@ -18,6 +19,6 @@ impl PieceTableBuffer {
             Some(s) => s,
             None => return,
         };
-        self.nodes.splice(step.start..step.end, step.pieces);
+        self.pieces.splice(step.start..step.end, step.pieces);
     }
 }
