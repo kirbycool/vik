@@ -52,6 +52,10 @@ impl NormalState {
             Key::Char('d') => {
                 return self.push_state(State::DeleteOperator(DeleteOperatorState::new()))
             }
+
+            // Undo/redo
+            Key::Char('u') => editor.text_buffer.text_buffer.undo(),
+
             _ => (),
         }
         vec![State::Normal(self)]

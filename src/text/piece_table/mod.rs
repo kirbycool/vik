@@ -2,10 +2,13 @@
 #[path = "./piece_table_test.rs"]
 mod test;
 
+mod undo;
+
 use super::{Range, TextBuffer};
 use crate::buffer::Position;
 use std::rc::Rc;
 use tui::text::{Span, Spans, Text};
+use undo::UndoStep;
 
 /**
  * A reference to the node index and offset
@@ -64,6 +67,8 @@ pub struct PieceTableBuffer {
     pub original: Rc<String>,
     pub added: Rc<String>,
     pub nodes: Vec<Node>,
+
+    pub undo_steps: Vec<UndoStep>,
 }
 
 impl PieceTableBuffer {
@@ -73,6 +78,7 @@ impl PieceTableBuffer {
             original: original.clone(),
             added: Rc::new(String::new()),
             nodes: vec![Node::new(original.clone(), 0, original.len())],
+            undo_steps: vec![],
         }
     }
 
@@ -269,11 +275,19 @@ impl TextBuffer for PieceTableBuffer {
         let new_node = Node::new(self.added.clone(), self.added.len() - 1, 1);
 
         // Replace the old node with the new nodes
-        let new_nodes = [left, new_node, right];
-        self.nodes.splice(
-            location.idx..=location.idx,
-            new_nodes.iter().filter(|node| node.length != 0).cloned(),
-        );
+        let new_nodes: Vec<Node> = [left, new_node, right]
+            .iter()
+            .filter(|node| node.length != 0)
+            .cloned()
+            .collect();
+        let end = location.idx + new_nodes.len();
+        let old_nodes: Vec<Node> = self
+            .nodes
+            .splice(location.idx..=location.idx, new_nodes)
+            .collect();
+
+        self.undo_steps
+            .push(UndoStep::new(location.idx, end, old_nodes))
     }
 
     fn delete<T: Into<Range>>(&mut self, range: T) {
@@ -303,12 +317,17 @@ impl TextBuffer for PieceTableBuffer {
             node_idx += 1;
         }
 
-        let new_nodes = [new_left, new_right];
-        self.nodes.splice(
-            location.idx..node_idx,
-            new_nodes
-                .iter()
-                .filter_map(|node| node.clone().filter(|node| node.length != 0)),
-        );
+        let new_nodes: Vec<Node> = [new_left, new_right]
+            .iter()
+            .filter_map(|node| node.clone().filter(|node| node.length != 0))
+            .collect();
+        let end = location.idx + new_nodes.len();
+        let old_nodes: Vec<Node> = self
+            .nodes
+            .splice(location.idx..node_idx, new_nodes)
+            .collect();
+
+        self.undo_steps
+            .push(UndoStep::new(location.idx, end, old_nodes));
     }
 }
