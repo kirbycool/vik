@@ -37,7 +37,9 @@ pub trait TextBuffer {
 
     fn delete<T: Into<Range>>(&mut self, range: T);
 
-    fn line_length(&self, n: usize) -> usize;
+    fn line(&self, line: usize) -> String;
+
+    fn line_length(&self, line: usize) -> usize;
 
     fn line_count(&self) -> usize;
 }

@@ -209,12 +209,9 @@ impl TextBuffer for PieceTableBuffer {
         self.pieces.iter().map(|piece| piece.newline_count).sum()
     }
 
-    fn line_length(&self, line: usize) -> usize {
+    fn line(&self, line: usize) -> String {
         let loc = self.line_start(line);
 
-        // If the piece contains the next line too, we can figure
-        // out the line length, otherwise we need to iterate more
-        // pieces until we find a new line or EOF
         let mut texts = self.pieces[loc.idx..].iter().enumerate().map(|(i, piece)| {
             if i == 0 {
                 &piece.text()[loc.offset..]
@@ -223,14 +220,21 @@ impl TextBuffer for PieceTableBuffer {
             }
         });
 
-        let mut length = 0;
+        // If the piece contains the next line too, we're done,
+        // otherwise we need to iterate more pieces until we find a new
+        // line or EOF
+        let mut result = "".to_string();
         while let Some(text) = texts.next() {
             match text.find('\n') {
-                Some(i) => return length + i,
-                None => length += text.len(),
+                Some(i) => result.push_str(&text[..i]),
+                None => result.push_str(text),
             }
         }
-        length
+        result
+    }
+
+    fn line_length(&self, line: usize) -> usize {
+        self.line(line).len()
     }
 
     fn insert(&mut self, pos: Position, c: char) {

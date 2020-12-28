@@ -37,8 +37,8 @@ impl CommandState {
                 return vec![];
             }
             Key::Backspace => self.buffer.delete(),
-            Key::Left => self.buffer.prev(),
-            Key::Right => self.buffer.next(),
+            Key::Left => self.buffer.move_cursor(self.buffer.prev()),
+            Key::Right => self.buffer.move_cursor(self.buffer.next()),
             _ => (),
         }
 

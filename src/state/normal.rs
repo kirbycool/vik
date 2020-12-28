@@ -18,27 +18,28 @@ impl NormalState {
     }
 
     fn handle_key(self, key: Key, editor: &mut Editor) -> Vec<State> {
+        let buffer = &mut editor.text_buffer;
         match key {
             // Motions
-            Key::Left | Key::Char('h') => editor.text_buffer.prev(),
-            Key::Right | Key::Char('l') => editor.text_buffer.next(),
-            Key::Up | Key::Char('k') => editor.text_buffer.prev_line(),
-            Key::Down | Key::Char('j') => editor.text_buffer.next_line(),
-            Key::Char('0') => editor.text_buffer.start_line(),
-            Key::Char('$') => editor.text_buffer.end_line(),
+            Key::Left | Key::Char('h') => buffer.move_cursor(buffer.prev()),
+            Key::Right | Key::Char('l') => buffer.move_cursor(buffer.next()),
+            Key::Up | Key::Char('k') => buffer.move_cursor(buffer.prev_line()),
+            Key::Down | Key::Char('j') => buffer.move_cursor(buffer.next_line()),
+            Key::Char('0') => buffer.move_cursor(buffer.start_line()),
+            Key::Char('$') => buffer.move_cursor(buffer.end_line()),
 
             // Insert mode commands
             Key::Char('i') => return self.push_insert(),
             Key::Char('a') => {
-                editor.text_buffer.next();
+                buffer.next();
                 return self.push_insert();
             }
             Key::Char('o') => {
-                editor.text_buffer.line_below();
+                buffer.line_below();
                 return self.push_insert();
             }
             Key::Char('O') => {
-                editor.text_buffer.line_above();
+                buffer.line_above();
                 return self.push_insert();
             }
 
@@ -46,7 +47,7 @@ impl NormalState {
             Key::Char(':') => return self.push_command(),
 
             // Change commands
-            Key::Char('x') => editor.text_buffer.delete(),
+            Key::Char('x') => buffer.delete(),
 
             // Operators
             Key::Char('d') => {
@@ -54,7 +55,7 @@ impl NormalState {
             }
 
             // Undo/redo
-            Key::Char('u') => editor.text_buffer.text_buffer.undo(),
+            Key::Char('u') => buffer.text_buffer.undo(),
 
             _ => (),
         }

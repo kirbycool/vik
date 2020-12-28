@@ -2,7 +2,6 @@ use crate::editor::Editor;
 use crate::state::State;
 use crate::text::TextBuffer;
 use crate::ui::text_window::TextWindow;
-use log::debug;
 use std::io;
 use termion::cursor;
 use tui::backend::Backend;

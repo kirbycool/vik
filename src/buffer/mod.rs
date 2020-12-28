@@ -1,3 +1,5 @@
+pub mod motions;
+
 use crate::text::TextBuffer;
 
 #[derive(Debug, Clone, Copy)]
@@ -57,38 +59,20 @@ impl<T: TextBuffer> Buffer<T> {
         self.text_buffer.delete(self.cursor)
     }
 
-    pub fn prev(&mut self) {
-        if self.cursor.col > 0 {
-            self.cursor.col -= 1;
+    pub fn move_cursor(&mut self, pos: Position) {
+        self.cursor = pos
+    }
+
+    pub fn cursor(&self) -> Position {
+        let max_col = self.text_buffer.line_length(self.cursor.line);
+        Position {
+            line: self.cursor.line,
+            col: if self.cursor.col > max_col {
+                max_col
+            } else {
+                self.cursor.col
+            },
         }
-    }
-
-    pub fn next(&mut self) {
-        let max_cols = self.text_buffer.line_length(self.cursor.line);
-        if self.cursor.col < max_cols {
-            self.cursor.col += 1;
-        }
-    }
-
-    pub fn prev_line(&mut self) {
-        if self.cursor.line > 0 {
-            self.cursor.line -= 1;
-        }
-    }
-
-    pub fn next_line(&mut self) {
-        let max_lines = self.text_buffer.line_count();
-        if self.cursor.line < max_lines - 1 {
-            self.cursor.line += 1
-        }
-    }
-
-    pub fn start_line(&mut self) {
-        self.cursor.col = 0;
-    }
-
-    pub fn end_line(&mut self) {
-        self.cursor.col = self.text_buffer.line_length(self.cursor.line);
     }
 
     pub fn line_above(&mut self) {
@@ -102,17 +86,5 @@ impl<T: TextBuffer> Buffer<T> {
         let col = self.text_buffer.line_length(line);
         self.text_buffer.insert(Position::new(line, col), '\n');
         self.cursor = Position::new(line + 1, 0);
-    }
-
-    pub fn cursor(&self) -> Position {
-        let max_col = self.text_buffer.line_length(self.cursor.line);
-        Position {
-            line: self.cursor.line,
-            col: if self.cursor.col > max_col {
-                max_col
-            } else {
-                self.cursor.col
-            },
-        }
     }
 }

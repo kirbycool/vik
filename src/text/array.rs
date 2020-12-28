@@ -68,6 +68,11 @@ impl TextBuffer for ArrayBuffer {
         self.text.remove(idx);
     }
 
+    fn line(&self, line: usize) -> String {
+        let line_pos = self.get_line(line);
+        self.text[line_pos.start..=line_pos.end].to_string()
+    }
+
     fn line_length(&self, n: usize) -> usize {
         let line = self.get_line(n);
         line.end - line.start

@@ -18,20 +18,21 @@ impl InsertState {
     }
 
     fn handle_key(self, key: Key, editor: &mut Editor) -> Vec<State> {
+        let buffer = &mut editor.text_buffer;
         match key {
             Key::Char(c) => {
-                editor.text_buffer.insert(c);
+                buffer.insert(c);
             }
             Key::Esc => {
-                editor.text_buffer.prev();
-                editor.text_buffer.text_buffer.cache_idx = None;
+                buffer.prev();
+                buffer.text_buffer.cache_idx = None;
                 return vec![];
             }
-            Key::Backspace => editor.text_buffer.delete(),
-            Key::Left => editor.text_buffer.prev(),
-            Key::Right => editor.text_buffer.next(),
-            Key::Up => editor.text_buffer.prev_line(),
-            Key::Down => editor.text_buffer.next_line(),
+            Key::Backspace => buffer.delete(),
+            Key::Left => buffer.move_cursor(buffer.prev()),
+            Key::Right => buffer.move_cursor(buffer.next()),
+            Key::Up => buffer.move_cursor(buffer.prev_line()),
+            Key::Down => buffer.move_cursor(buffer.next_line()),
             _ => (),
         }
         vec![State::Insert(self)]
