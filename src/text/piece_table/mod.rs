@@ -160,14 +160,11 @@ impl PieceTableBuffer {
         location.offset = 0;
         location
     }
-
-    /* Forward chars iterator from a position */
-    fn chars(&self, pos: Position) -> ForwardIterator {
-        ForwardIterator::new(&self, pos)
-    }
 }
 
-impl TextBuffer for PieceTableBuffer {
+impl<'a> TextBuffer<'a> for PieceTableBuffer {
+    type Iter = ForwardIterator<'a>;
+
     fn to_string(&self) -> String {
         self.chars(Position::new(0, 0)).collect::<String>()
     }
@@ -212,6 +209,11 @@ impl TextBuffer for PieceTableBuffer {
         }
 
         Text::from(lines)
+    }
+
+    /* Forward chars iterator from a position */
+    fn chars(&self, pos: Position) -> ForwardIterator {
+        ForwardIterator::new(&self, pos)
     }
 
     fn line_count(&self) -> usize {

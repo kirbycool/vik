@@ -7,6 +7,40 @@ struct Line {
     end: usize,
 }
 
+pub struct ForwardIterator<'a> {
+    chars: Box<dyn Iterator<Item = char> + 'a>,
+}
+
+impl<'a> ForwardIterator<'a> {
+    pub fn new(array_buffer: &'a ArrayBuffer, pos: Position) -> Self {
+        let mut remaining_lines = pos.line;
+        let mut remaining_cols = pos.col;
+        let chars = array_buffer.text.chars().skip_while(|&c| {
+            if c == '\n' && remaining_lines > 0 {
+                remaining_lines -= 1;
+                false
+            } else if remaining_cols > 0 {
+                remaining_cols -= 1;
+                false
+            } else {
+                true
+            }
+        });
+
+        ForwardIterator {
+            chars: Box::new(chars),
+        }
+    }
+}
+
+impl<'a> Iterator for ForwardIterator<'a> {
+    type Item = char;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        self.chars.next()
+    }
+}
+
 pub struct ArrayBuffer {
     pub text: String,
 }
@@ -41,7 +75,9 @@ impl ArrayBuffer {
     }
 }
 
-impl TextBuffer for ArrayBuffer {
+impl<'a> TextBuffer<'a> for ArrayBuffer {
+    type Iter = ForwardIterator<'a>;
+
     fn to_string(&self) -> String {
         self.text.to_string()
     }
@@ -66,6 +102,10 @@ impl TextBuffer for ArrayBuffer {
         let range = range.into();
         let idx = self.pos_idx(range.start);
         self.text.remove(idx);
+    }
+
+    fn chars(&self, pos: Position) -> ForwardIterator {
+        ForwardIterator::new(self, pos)
     }
 
     fn line(&self, line: usize) -> String {
