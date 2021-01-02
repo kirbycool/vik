@@ -2,10 +2,12 @@
 #[path = "./piece_table_test.rs"]
 mod test;
 
+mod iterator;
 mod undo;
 
 use super::{Range, TextBuffer};
 use crate::buffer::Position;
+use iterator::ForwardIterator;
 use std::rc::Rc;
 use tui::text::{Span, Spans, Text};
 use undo::UndoStep;
@@ -17,6 +19,12 @@ use undo::UndoStep;
 pub struct Location {
     pub idx: usize,
     pub offset: usize,
+}
+
+impl Location {
+    fn new(idx: usize, offset: usize) -> Self {
+        Self { idx, offset }
+    }
 }
 
 /**
@@ -152,15 +160,16 @@ impl PieceTableBuffer {
         location.offset = 0;
         location
     }
+
+    /* Forward chars iterator from a position */
+    fn chars(&self, pos: Position) -> ForwardIterator {
+        ForwardIterator::new(&self, pos)
+    }
 }
 
 impl TextBuffer for PieceTableBuffer {
     fn to_string(&self) -> String {
-        self.pieces
-            .iter()
-            .map(|piece| piece.text())
-            .collect::<Vec<&str>>()
-            .join("")
+        self.chars(Position::new(0, 0)).collect::<String>()
     }
 
     fn to_text(&self, start: usize, count: usize) -> Text {
@@ -210,27 +219,9 @@ impl TextBuffer for PieceTableBuffer {
     }
 
     fn line(&self, line: usize) -> String {
-        let loc = self.line_start(line);
-
-        let mut texts = self.pieces[loc.idx..].iter().enumerate().map(|(i, piece)| {
-            if i == 0 {
-                &piece.text()[loc.offset..]
-            } else {
-                &piece.text()
-            }
-        });
-
-        // If the piece contains the next line too, we're done,
-        // otherwise we need to iterate more pieces until we find a new
-        // line or EOF
-        let mut result = "".to_string();
-        while let Some(text) = texts.next() {
-            match text.find('\n') {
-                Some(i) => result.push_str(&text[..i]),
-                None => result.push_str(text),
-            }
-        }
-        result
+        self.chars(Position::new(line, 0))
+            .take_while(|&c| c != '\n')
+            .collect::<String>()
     }
 
     fn line_length(&self, line: usize) -> usize {
