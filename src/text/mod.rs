@@ -28,8 +28,8 @@ impl From<Position> for Range {
     }
 }
 
-pub trait TextBuffer<'a> {
-    type Iter: Iterator<Item = char>;
+pub trait TextBuffer {
+    type Iter<'a>: Iterator<Item = char>;
 
     fn to_string(&self) -> String;
 
@@ -39,11 +39,21 @@ pub trait TextBuffer<'a> {
 
     fn delete<T: Into<Range>>(&mut self, range: T);
 
-    fn chars(&'a self, pos: Position) -> Self::Iter;
+    fn chars<'a>(&'a self, pos: Position) -> Self::Iter<'a>;
 
-    fn line(&self, line: usize) -> String;
+    fn line_count(&self) -> usize {
+        self.chars(Position::new(0, 0))
+            .filter(|&c| c == '\n')
+            .count()
+    }
 
-    fn line_length(&self, line: usize) -> usize;
+    fn line(&self, line: usize) -> String {
+        self.chars(Position::new(line, 0))
+            .take_while(|&c| c != '\n')
+            .collect::<String>()
+    }
 
-    fn line_count(&self) -> usize;
+    fn line_length(&self, line: usize) -> usize {
+        self.line(line).len()
+    }
 }

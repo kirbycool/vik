@@ -27,7 +27,7 @@ impl TextObject {
         TextObject::Linewise(LinewiseObject { start, end })
     }
 
-    pub fn range<'a, T: TextBuffer<'a>>(&self, text: &T) -> Range {
+    pub fn range<T: TextBuffer>(&self, text: &T) -> Range {
         use TextObject::*;
 
         match self {

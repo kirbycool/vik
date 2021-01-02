@@ -8,8 +8,8 @@ pub struct ForwardIterator<'a> {
     pieces: Iter<'a, Piece>,
 }
 
-impl ForwardIterator {
-    pub fn new(piece_table: &'a PieceTableBuffer, pos: Position) -> Self<'a> {
+impl<'a> ForwardIterator<'a> {
+    pub fn new(piece_table: &'a PieceTableBuffer, pos: Position) -> Self {
         let loc = piece_table.location(pos);
         let mut pieces = piece_table.pieces[loc.idx..].iter();
 
@@ -37,7 +37,7 @@ impl ForwardIterator {
     }
 }
 
-impl Iterator for ForwardIterator {
+impl<'a> Iterator for ForwardIterator<'a> {
     type Item = char;
 
     fn next(&mut self) -> Option<Self::Item> {

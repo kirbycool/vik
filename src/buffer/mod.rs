@@ -14,13 +14,13 @@ impl Position {
     }
 }
 
-#[derive('a, Debug, Clone)]
-pub struct Buffer<T: TextBuffer<'a>> {
+#[derive(Debug, Clone)]
+pub struct Buffer<T: TextBuffer> {
     pub cursor: Position,
     pub text_buffer: Box<T>,
 }
 
-impl<'a, T: TextBuffer<'a>> Buffer<T> {
+impl<T: TextBuffer> Buffer<T> {
     pub fn new(text_buffer: Box<T>) -> Self {
         Buffer {
             cursor: Position::new(0, 0),

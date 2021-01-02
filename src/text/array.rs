@@ -15,7 +15,7 @@ impl<'a> ForwardIterator<'a> {
     pub fn new(array_buffer: &'a ArrayBuffer, pos: Position) -> Self {
         let mut remaining_lines = pos.line;
         let mut remaining_cols = pos.col;
-        let chars = array_buffer.text.chars().skip_while(|&c| {
+        let chars = array_buffer.text.chars().skip_while(move |&c| {
             if c == '\n' && remaining_lines > 0 {
                 remaining_lines -= 1;
                 false
@@ -75,8 +75,8 @@ impl ArrayBuffer {
     }
 }
 
-impl<'a> TextBuffer<'a> for ArrayBuffer {
-    type Iter = ForwardIterator<'a>;
+impl TextBuffer for ArrayBuffer {
+    type Iter<'a> = ForwardIterator<'a>;
 
     fn to_string(&self) -> String {
         self.text.to_string()
@@ -106,19 +106,5 @@ impl<'a> TextBuffer<'a> for ArrayBuffer {
 
     fn chars(&self, pos: Position) -> ForwardIterator {
         ForwardIterator::new(self, pos)
-    }
-
-    fn line(&self, line: usize) -> String {
-        let line_pos = self.get_line(line);
-        self.text[line_pos.start..=line_pos.end].to_string()
-    }
-
-    fn line_length(&self, n: usize) -> usize {
-        let line = self.get_line(n);
-        line.end - line.start
-    }
-
-    fn line_count(&self) -> usize {
-        self.text.matches('\n').count()
     }
 }

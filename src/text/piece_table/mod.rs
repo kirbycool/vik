@@ -21,12 +21,6 @@ pub struct Location {
     pub offset: usize,
 }
 
-impl Location {
-    fn new(idx: usize, offset: usize) -> Self {
-        Self { idx, offset }
-    }
-}
-
 /**
  * A sequence of start, length into original or added.
  * We can build the contents by appending each piece's referenced
@@ -162,8 +156,8 @@ impl PieceTableBuffer {
     }
 }
 
-impl<'a> TextBuffer<'a> for PieceTableBuffer {
-    type Iter = ForwardIterator<'a>;
+impl TextBuffer for PieceTableBuffer {
+    type Iter<'a> = ForwardIterator<'a>;
 
     fn to_string(&self) -> String {
         self.chars(Position::new(0, 0)).collect::<String>()
@@ -214,20 +208,6 @@ impl<'a> TextBuffer<'a> for PieceTableBuffer {
     /* Forward chars iterator from a position */
     fn chars(&self, pos: Position) -> ForwardIterator {
         ForwardIterator::new(&self, pos)
-    }
-
-    fn line_count(&self) -> usize {
-        self.pieces.iter().map(|piece| piece.newline_count).sum()
-    }
-
-    fn line(&self, line: usize) -> String {
-        self.chars(Position::new(line, 0))
-            .take_while(|&c| c != '\n')
-            .collect::<String>()
-    }
-
-    fn line_length(&self, line: usize) -> usize {
-        self.line(line).len()
     }
 
     fn insert(&mut self, pos: Position, c: char) {
