@@ -12,11 +12,6 @@ use vik::ui::draw;
 fn main() {
     init_logger();
 
-    ratatui::run(app);
-
-}
-
-fn app(terminal: &mut DefaultTerminal) {
     let clap_app = App::new("Vik").arg(
         Arg::with_name("FILE")
             .index(1)
@@ -25,14 +20,20 @@ fn app(terminal: &mut DefaultTerminal) {
     );
     let matches = clap_app.get_matches();
 
-    let mut editor = match matches.value_of("FILE") {
+    let editor = match matches.value_of("FILE") {
         Some(filename) => Editor::from_file(filename.to_string()),
         None => Editor::new(),
     };
 
+    ratatui::run(|terminal| run_app(terminal, editor));
+
+}
+
+fn run_app(terminal: &mut DefaultTerminal, mut editor: Editor) {
+
     debug!("Initialized");
 
-    draw(&mut editor, terminal);
+    draw(&mut editor, terminal).unwrap();
 
     while editor.running {
         let mut should_draw = false;
