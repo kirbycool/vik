@@ -1,7 +1,7 @@
 use super::State;
 use crate::editor::Editor;
 use crate::event::Event;
-use termion::event::Key;
+use ratatui::crossterm::event::{KeyCode, KeyEvent};
 
 #[derive(Clone, Debug)]
 pub struct InsertState {}
@@ -17,22 +17,24 @@ impl InsertState {
         }
     }
 
-    fn handle_key(self, key: Key, editor: &mut Editor) -> Vec<State> {
+    fn handle_key(self, key: KeyEvent, editor: &mut Editor) -> Vec<State> {
         let buffer = &mut editor.text_buffer;
-        match key {
-            Key::Char(c) => {
+        match key.code {
+            KeyCode::Char(c) => {
                 buffer.insert(c);
             }
-            Key::Esc => {
+            KeyCode::Enter => buffer.insert('\n'),
+            KeyCode::Tab => buffer.insert('\t'),
+            KeyCode::Esc => {
                 buffer.prev();
                 buffer.text_buffer.cache_idx = None;
                 return vec![];
             }
-            Key::Backspace => buffer.delete(),
-            Key::Left => buffer.move_cursor(buffer.prev()),
-            Key::Right => buffer.move_cursor(buffer.next()),
-            Key::Up => buffer.move_cursor(buffer.prev_line()),
-            Key::Down => buffer.move_cursor(buffer.next_line()),
+            KeyCode::Backspace => buffer.delete(),
+            KeyCode::Left => buffer.move_cursor(buffer.prev()),
+            KeyCode::Right => buffer.move_cursor(buffer.next()),
+            KeyCode::Up => buffer.move_cursor(buffer.prev_line()),
+            KeyCode::Down => buffer.move_cursor(buffer.next_line()),
             _ => (),
         }
         vec![State::Insert(self)]

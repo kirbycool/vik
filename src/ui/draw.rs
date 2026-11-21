@@ -3,15 +3,16 @@ use crate::state::State;
 use crate::text::TextBuffer;
 use crate::ui::text_window::TextWindow;
 use std::io;
-use termion::cursor;
-use tui::backend::Backend;
-use tui::layout::{Constraint, Direction, Layout, Rect};
-use tui::style::{Color, Style};
-use tui::text::Text;
-use tui::widgets::{Block, Paragraph};
-use tui::{Frame, Terminal};
+use ratatui::backend::Backend;
+use ratatui::crossterm::cursor::{SetCursorStyle};
+use ratatui::crossterm::ExecutableCommand;
+use ratatui::layout::{Constraint, Direction, Layout, Rect};
+use ratatui::style::{Color, Style};
+use ratatui::text::Text;
+use ratatui::widgets::{Block, Paragraph};
+use ratatui::{Frame, Terminal};
 
-pub fn draw<B: Backend>(editor: &mut Editor, terminal: &mut Terminal<B>) -> Result<(), io::Error> {
+pub fn draw<B: Backend>(editor: &mut Editor, terminal: &mut Terminal<B>) -> Result<(), B::Error> {
     terminal.draw(|f| {
         let area = f.size();
         let chunks = Layout::default()
@@ -30,30 +31,26 @@ pub fn draw<B: Backend>(editor: &mut Editor, terminal: &mut Terminal<B>) -> Resu
         draw_text(editor, chunks[0], f);
         draw_statusline(editor, chunks[1], f);
         draw_commandline(editor, chunks[2], f);
-    })
+    })?;
+
+    Ok(())
 }
 
-fn draw_text<B: Backend>(editor: &mut Editor, area: Rect, frame: &mut Frame<B>) {
+fn draw_text(editor: &mut Editor, area: Rect, frame: &mut Frame) {
     let paragraph = TextWindow::new(&editor.text_buffer)
         .style(Style::default().fg(Color::White).bg(Color::Black));
     frame.render_stateful_widget(paragraph, area, &mut editor.text_window_state);
 
     // Draw the cursor in the text
     let state = editor.state();
-    match state {
-        State::Normal(_) | State::Insert(_) | State::DeleteOperator(_) => (),
-        _ => return,
-    }
 
-    if let State::Normal(_) = state {
-        print!("{}", cursor::SteadyBlock);
-    }
-    if let State::Insert(_) = state {
-        print!("{}", cursor::SteadyBar);
-    }
-    if let State::DeleteOperator(_) = state {
-        print!("{}", cursor::SteadyUnderline);
-    }
+    let cursor_style = match state {
+        State::Normal(_) => SetCursorStyle::SteadyBlock,
+        State::Insert(_) => SetCursorStyle::SteadyBar,
+        State::DeleteOperator(_) => SetCursorStyle::SteadyUnderScore,
+        _ => return
+    };
+    io::stdout().execute(cursor_style);
 
     let cursor = editor.text_buffer.cursor();
     let offset = editor.text_window_state.offset;
@@ -63,7 +60,7 @@ fn draw_text<B: Backend>(editor: &mut Editor, area: Rect, frame: &mut Frame<B>) 
     )
 }
 
-fn draw_statusline<B: Backend>(editor: &Editor, area: Rect, frame: &mut Frame<B>) {
+fn draw_statusline(editor: &Editor, area: Rect, frame: &mut Frame) {
     let status = format!(
         "{} | {}",
         editor.mode(),
@@ -74,7 +71,7 @@ fn draw_statusline<B: Backend>(editor: &Editor, area: Rect, frame: &mut Frame<B>
     frame.render_widget(paragraph, area);
 }
 
-fn draw_commandline<B: Backend>(editor: &Editor, area: Rect, frame: &mut Frame<B>) {
+fn draw_commandline(editor: &Editor, area: Rect, frame: &mut Frame) {
     let style = Style::default().bg(Color::Black).fg(Color::White);
     let state = match editor.state() {
         State::Command(s) => s,
@@ -91,7 +88,7 @@ fn draw_commandline<B: Backend>(editor: &Editor, area: Rect, frame: &mut Frame<B
 
     // Handle cursor
     let cursor = &state.buffer.cursor();
-    print!("{}", cursor::SteadyBlock);
+    print!("{}", SetCursorStyle::SteadyBlock);
     frame.set_cursor(
         area.x + cursor.col as u16 + 1,
         area.y, // Always one line

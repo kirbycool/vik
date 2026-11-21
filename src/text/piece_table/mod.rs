@@ -9,7 +9,7 @@ use super::{Range, TextBuffer};
 use crate::buffer::Position;
 use iterator::ForwardIterator;
 use std::rc::Rc;
-use tui::text::{Span, Spans, Text};
+use ratatui::text::{Span, Line, Text};
 use undo::UndoStep;
 
 /**
@@ -164,7 +164,7 @@ impl TextBuffer for PieceTableBuffer {
     }
 
     fn to_text(&self, start: usize, count: usize) -> Text {
-        let mut lines: Vec<Spans> = vec![];
+        let mut lines: Vec<Line> = vec![];
         let mut overflow: Vec<Span> = vec![];
 
         let line_loc = self.line_start(start);
@@ -190,7 +190,7 @@ impl TextBuffer for PieceTableBuffer {
                 }
 
                 overflow.push(Span::from(chunk));
-                lines.push(Spans::from(overflow));
+                lines.push(Line::from(overflow));
                 overflow = vec![];
             }
 
@@ -199,7 +199,7 @@ impl TextBuffer for PieceTableBuffer {
 
         // Push the last line
         if !overflow.is_empty() {
-            lines.push(Spans::from(overflow));
+            lines.push(Line::from(overflow));
         }
 
         Text::from(lines)
@@ -216,7 +216,7 @@ impl TextBuffer for PieceTableBuffer {
         // Because the added vector is append only, all slice refs
         // will remain valid.
         unsafe {
-            Rc::get_mut_unchecked(&mut self.added).push(c);
+            (*(Rc::as_ptr(&self.added) as *mut String)).push(c);
         }
 
         // If we're at the start of a piece and the left piece points to the

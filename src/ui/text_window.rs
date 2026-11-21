@@ -1,6 +1,6 @@
 use crate::buffer;
 use crate::text::{PieceTableBuffer, TextBuffer};
-use tui::{
+use ratatui::{
     buffer::Buffer,
     layout::Rect,
     style::Style,

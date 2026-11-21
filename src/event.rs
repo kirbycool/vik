@@ -1,5 +1,5 @@
-use termion;
+use ratatui::crossterm::event;
 
 pub enum Event {
-    Key(termion::event::Key),
+    Key(event::KeyEvent),
 }

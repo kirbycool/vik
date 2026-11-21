@@ -5,7 +5,7 @@ use crate::event::Event;
 use crate::file::{load_file, write_file};
 use crate::text::{ArrayBuffer, TextBuffer};
 use std::error::Error;
-use termion::event::Key;
+use ratatui::crossterm::event::{KeyCode, KeyEvent};
 
 pub struct CommandState {
     pub buffer: Buffer<ArrayBuffer>,
@@ -24,21 +24,21 @@ impl CommandState {
         }
     }
 
-    fn handle_key(mut self, key: Key, editor: &mut Editor) -> Vec<State> {
-        match key {
-            Key::Char('\n') => {
+    fn handle_key(mut self, key: KeyEvent, editor: &mut Editor) -> Vec<State> {
+        match key.code {
+            KeyCode::Enter => {
                 self.run_command(editor).unwrap();
                 return vec![];
             }
-            Key::Char(c) => {
+            KeyCode::Char(c) => {
                 self.buffer.insert(c);
             }
-            Key::Esc => {
+            KeyCode::Esc => {
                 return vec![];
             }
-            Key::Backspace => self.buffer.delete(),
-            Key::Left => self.buffer.move_cursor(self.buffer.prev()),
-            Key::Right => self.buffer.move_cursor(self.buffer.next()),
+            KeyCode::Backspace => self.buffer.delete(),
+            KeyCode::Left => self.buffer.move_cursor(self.buffer.prev()),
+            KeyCode::Right => self.buffer.move_cursor(self.buffer.next()),
             _ => (),
         }
 

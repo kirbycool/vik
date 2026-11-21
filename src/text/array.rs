@@ -1,6 +1,6 @@
 use super::{Range, TextBuffer};
 use crate::buffer::Position;
-use tui::text::{Spans, Text};
+use ratatui::text;
 
 struct Line {
     start: usize,
@@ -82,15 +82,15 @@ impl TextBuffer for ArrayBuffer {
         self.text.to_string()
     }
 
-    fn to_text(&self, start: usize, count: usize) -> Text {
-        let spans = self
+    fn to_text(&self, start: usize, count: usize) -> text::Text {
+        let lines = self
             .text
             .lines()
             .skip(start)
             .take(count)
-            .map(|line| Spans::from(line))
-            .collect::<Vec<Spans>>();
-        Text::from(spans)
+            .map(|line| text::Line::from(line))
+            .collect::<Vec<text::Line>>();
+        text::Text::from(lines)
     }
 
     fn insert(&mut self, pos: Position, c: char) {

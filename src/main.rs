@@ -1,10 +1,7 @@
 use clap::{App, Arg};
 use log::debug;
 use std::io;
-use termion::input::TermRead;
-use termion::raw::IntoRawMode;
-use tui::backend::TermionBackend;
-use tui::Terminal;
+use ratatui::{DefaultTerminal, crossterm};
 use vik::editor::Editor;
 use vik::event::Event;
 use vik::logger::init_logger;
@@ -15,6 +12,11 @@ use vik::ui::draw;
 fn main() {
     init_logger();
 
+    ratatui::run(app);
+
+}
+
+fn app(terminal: &mut DefaultTerminal) {
     let clap_app = App::new("Vik").arg(
         Arg::with_name("FILE")
             .index(1)
@@ -23,31 +25,28 @@ fn main() {
     );
     let matches = clap_app.get_matches();
 
-    let stdout = io::stdout().into_raw_mode().unwrap();
-    let backend = TermionBackend::new(stdout);
-    let mut terminal = Terminal::new(backend).unwrap();
-    let mut keys = io::stdin().keys();
-
     let mut editor = match matches.value_of("FILE") {
         Some(filename) => Editor::from_file(filename.to_string()),
         None => Editor::new(),
     };
 
-    // Initial draw
-    draw(&mut editor, &mut terminal).unwrap();
-
     debug!("Initialized");
+
+    draw(&mut editor, terminal);
 
     while editor.running {
         let mut should_draw = false;
 
-        if let Some(Ok(key)) = keys.next() {
-            editor.handle_event(Event::Key(key));
-            should_draw = true;
+        match crossterm::event::read() {
+            Ok(crossterm::event::Event::Key(event)) => {
+                editor.handle_event(Event::Key(event));
+                should_draw = true;
+            },
+            _ => continue
         }
 
         if should_draw {
-            draw(&mut editor, &mut terminal).unwrap();
+            draw(&mut editor, terminal).unwrap();
         }
     }
 }

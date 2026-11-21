@@ -5,7 +5,7 @@ pub use array::ArrayBuffer;
 pub use piece_table::PieceTableBuffer;
 
 use crate::buffer::Position;
-use tui::text::Text;
+use ratatui::text::Text;
 
 #[derive(Debug, Clone, Copy)]
 pub struct Range {
@@ -29,7 +29,7 @@ impl From<Position> for Range {
 }
 
 pub trait TextBuffer {
-    type Iter<'a>: Iterator<Item = char>;
+    type Iter<'a>: Iterator<Item = char> where Self: 'a;
 
     fn to_string(&self) -> String;
 
