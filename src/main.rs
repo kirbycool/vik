@@ -1,6 +1,5 @@
 use clap::{App, Arg};
 use log::debug;
-use std::io;
 use ratatui::{DefaultTerminal, crossterm};
 use vik::editor::Editor;
 use vik::event::Event;
@@ -36,18 +35,13 @@ fn run_app(terminal: &mut DefaultTerminal, mut editor: Editor) {
     draw(&mut editor, terminal).unwrap();
 
     while editor.running {
-        let mut should_draw = false;
-
         match crossterm::event::read() {
             Ok(crossterm::event::Event::Key(event)) => {
                 editor.handle_event(Event::Key(event));
-                should_draw = true;
             },
             _ => continue
         }
 
-        if should_draw {
-            draw(&mut editor, terminal).unwrap();
-        }
+        draw(&mut editor, terminal).unwrap();
     }
 }

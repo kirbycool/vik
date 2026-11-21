@@ -6,6 +6,7 @@ use std::str::Chars;
 pub struct ForwardIterator<'a> {
     chars: Chars<'a>,
     pieces: Iter<'a, Piece>,
+    table: &'a PieceTableBuffer,
 }
 
 impl<'a> ForwardIterator<'a> {
@@ -18,18 +19,21 @@ impl<'a> ForwardIterator<'a> {
             None => {
                 return ForwardIterator {
                     pieces,
+                    table: piece_table,
                     chars: "".chars(),
                 }
             }
         };
-        match first_piece.text().get(loc.offset..) {
+        match piece_table.piece_text(first_piece).get(loc.offset..) {
             Some(text) => ForwardIterator {
                 pieces,
+                table: piece_table,
                 chars: text.chars(),
             },
             None => {
                 return ForwardIterator {
                     pieces,
+                    table: piece_table,
                     chars: "".chars(),
                 }
             }
@@ -45,27 +49,28 @@ impl<'a> Iterator for ForwardIterator<'a> {
             Some(c) => Some(c),
             None => {
                 let piece = self.pieces.next()?;
-                self.chars = piece.text().chars();
+                self.chars = self.table.piece_text(piece).chars();
                 self.chars.next()
             }
         }
     }
 }
 
+#[cfg(test)]
 mod test {
     use super::*;
     use crate::buffer::Position;
-    use std::rc::Rc;
+    use super::super::PieceSource;
 
     #[test]
     fn test_forward_iterator() {
         let mut table = PieceTableBuffer::new("the quick\nbrown".to_string());
-        table.added = Rc::new(" fox\njumps".to_string());
+        table.added = " fox\njumps".to_string();
         table.pieces = vec![
-            Piece::new(table.original.clone(), 0, 5),
-            Piece::new(table.original.clone(), 5, 10),
-            Piece::new(table.added.clone(), 0, 5),
-            Piece::new(table.added.clone(), 5, 5),
+            table.new_piece(PieceSource::Original, 0, 5),
+            table.new_piece(PieceSource::Original, 5, 10),
+            table.new_piece(PieceSource::Added, 0, 5),
+            table.new_piece(PieceSource::Added, 5, 5),
         ];
 
         let result = ForwardIterator::new(&table, Position::new(1, 1)).collect::<String>();

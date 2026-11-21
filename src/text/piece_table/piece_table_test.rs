@@ -1,7 +1,6 @@
 use super::*;
 use crate::buffer::Position;
 use crate::text::Range;
-use std::rc::Rc;
 
 fn pos(line: usize, col: usize) -> Position {
     Position { line, col }
@@ -56,12 +55,12 @@ fn test_insert() {
 #[test]
 fn test_delete() {
     let mut table = PieceTableBuffer::new("the quick\nbrown".to_string());
-    table.added = Rc::new(" fox\njumps".to_string());
+    table.added = " fox\njumps".to_string();
     table.pieces = vec![
-        Piece::new(table.original.clone(), 0, 5),
-        Piece::new(table.original.clone(), 5, 10),
-        Piece::new(table.added.clone(), 0, 5),
-        Piece::new(table.added.clone(), 5, 5),
+        table.new_piece(PieceSource::Original, 0, 5),
+        table.new_piece(PieceSource::Original, 5, 10),
+        table.new_piece(PieceSource::Added, 0, 5),
+        table.new_piece(PieceSource::Added, 5, 5),
     ];
 
     // From front
@@ -98,12 +97,12 @@ fn test_delete() {
 #[test]
 fn test_line_length() {
     let mut table = PieceTableBuffer::new("the quick\nbrown".to_string());
-    table.added = Rc::new("jumped\nover the lazy dog".to_string());
+    table.added = "jumped\nover the lazy dog".to_string();
     table.pieces = vec![
-        Piece::new(table.original.clone(), 0, 5),
-        Piece::new(table.original.clone(), 5, 10),
-        Piece::new(table.added.clone(), 0, 10),
-        Piece::new(table.added.clone(), 10, 14),
+        table.new_piece(PieceSource::Original, 0, 5),
+        table.new_piece(PieceSource::Original, 5, 10),
+        table.new_piece(PieceSource::Added, 0, 10),
+        table.new_piece(PieceSource::Added, 10, 14),
     ];
 
     // assert_eq!(table.line_length(0), 9);

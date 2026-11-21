@@ -50,7 +50,7 @@ fn draw_text(editor: &mut Editor, area: Rect, frame: &mut Frame) {
         State::DeleteOperator(_) => SetCursorStyle::SteadyUnderScore,
         _ => return
     };
-    io::stdout().execute(cursor_style);
+    io::stdout().execute(cursor_style).unwrap();
 
     let cursor = editor.text_buffer.cursor();
     let offset = editor.text_window_state.offset;

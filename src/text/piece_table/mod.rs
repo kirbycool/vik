@@ -8,9 +8,15 @@ mod undo;
 use super::{Range, TextBuffer};
 use crate::buffer::Position;
 use iterator::ForwardIterator;
+use ratatui::text::{Line, Span, Text};
 use std::rc::Rc;
-use ratatui::text::{Span, Line, Text};
 use undo::UndoStep;
+
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub enum PieceSource {
+    Original,
+    Added,
+}
 
 /**
  * A reference to the piece index and offset
@@ -26,48 +32,21 @@ pub struct Location {
  * We can build the contents by appending each piece's referenced
  * text in order.
  */
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Piece {
-    pub source: Rc<String>,
+    pub source: PieceSource,
     pub start: usize,
     pub length: usize,
     pub newline_count: usize,
 }
 
-impl Piece {
-    pub fn new(source: Rc<String>, start: usize, length: usize) -> Self {
-        let mut piece = Piece {
-            source,
-            start,
-            length,
-            newline_count: 0,
-        };
-        piece.newline_count = piece.text().matches('\n').count();
-        piece
-    }
-
-    pub fn text(&self) -> &str {
-        let start = self.start;
-        let end = start + self.length;
-        &self.source[start..end]
-    }
-
-    pub fn split(&self, offset: usize) -> (Piece, Piece) {
-        let split = if self.length > 0 && offset > self.length - 1 {
-            self.length - 1
-        } else {
-            offset
-        };
-
-        let left = Piece::new(self.source.clone(), self.start, split);
-        let right = Piece::new(self.source.clone(), self.start + split, self.length - split);
-        (left, right)
-    }
+fn count_newlines(text: &str) -> usize {
+    text.matches('\n').count()
 }
 
 pub struct PieceTableBuffer {
-    pub original: Rc<String>,
-    pub added: Rc<String>,
+    pub original: String,
+    pub added: String,
     pub pieces: Vec<Piece>,
 
     pub undo_steps: Vec<UndoStep>,
@@ -76,14 +55,55 @@ pub struct PieceTableBuffer {
 
 impl PieceTableBuffer {
     pub fn new(text: String) -> Self {
-        let original = Rc::new(text);
+        let length = text.len();
+        let newline_count = count_newlines(&text);
+
         PieceTableBuffer {
-            original: original.clone(),
-            added: Rc::new(String::new()),
-            pieces: vec![Piece::new(original.clone(), 0, original.len())],
+            original: text,
+            added: String::new(),
+            pieces: vec![Piece {
+                source: PieceSource::Original,
+                start: 0,
+                length,
+                newline_count,
+            }],
             undo_steps: Vec::new(),
             cache_idx: None,
         }
+    }
+
+    fn new_piece(&self, source: PieceSource, start: usize, length: usize) -> Piece {
+        let mut piece = Piece {
+            source,
+            start,
+            length,
+            newline_count: 0,
+        };
+        piece.newline_count = count_newlines(self.piece_text(&piece));
+        piece
+    }
+
+    fn split_piece(&self, piece: &Piece, offset: usize) -> (Piece, Piece) {
+        let split = if piece.length > 0 && offset > piece.length - 1 {
+            piece.length - 1
+        } else {
+            offset
+        };
+
+        (
+            self.new_piece(piece.source, piece.start, split),
+            self.new_piece(piece.source, piece.start + split, piece.length - split),
+        )
+    }
+
+    fn piece_text(&self, piece: &Piece) -> &str {
+        let buffer = match piece.source {
+            PieceSource::Original => &self.original,
+            PieceSource::Added => &self.added,
+        };
+        let start = piece.start;
+        let end = piece.start + piece.length;
+        &buffer[start..end]
     }
 
     fn location(&self, pos: Position) -> Location {
@@ -92,7 +112,7 @@ impl PieceTableBuffer {
         let mut cols_remaining = pos.col;
 
         while let Some(piece) = pieces.next() {
-            let text = &piece.text()[location.offset..];
+            let text = &self.piece_text(piece)[location.offset..];
 
             // The line ends in this piece, so that's the max offset
             if let Some(line_end) = text.find('\n') {
@@ -135,7 +155,7 @@ impl PieceTableBuffer {
             if piece.newline_count >= lines_remaining {
                 let mut offset = 0;
                 for _ in 0..lines_remaining {
-                    offset = piece.text()[offset..]
+                    offset = self.piece_text(piece)[offset..]
                         .find('\n')
                         .map_or(offset, |i| offset + i + 1);
                 }
@@ -176,7 +196,7 @@ impl TextBuffer for PieceTableBuffer {
                 None => break,
             };
 
-            let mut chunks = piece.text()[offset..].split('\n').peekable();
+            let mut chunks = self.piece_text(piece)[offset..].split('\n').peekable();
             while let Some(chunk) = chunks.next() {
                 // If we've captured enough lines, we can break
                 if lines.len() >= count {
@@ -213,18 +233,14 @@ impl TextBuffer for PieceTableBuffer {
     fn insert(&mut self, pos: Position, c: char) {
         let location = self.location(pos);
 
-        // Because the added vector is append only, all slice refs
-        // will remain valid.
-        unsafe {
-            (*(Rc::as_ptr(&self.added) as *mut String)).push(c);
-        }
+        self.added.push(c);
 
         // If we're at the start of a piece and the left piece points to the
         // end of the added buffer, we can append to that piece instead
         let has_appendable_left_piece = if location.idx > 0 {
             let piece = &self.pieces[location.idx - 1];
             location.offset == 0
-                && piece.source == self.added
+                && piece.source == PieceSource::Added
                 && piece.start + piece.length == self.added.len() - 1
         } else {
             false
@@ -243,15 +259,15 @@ impl TextBuffer for PieceTableBuffer {
 
         // Push a new piece
         if location.idx >= self.pieces.len() {
-            let new_piece = Piece::new(self.added.clone(), self.added.len() - 1, 1);
+            let new_piece = self.new_piece(PieceSource::Added, self.added.len() - 1, 1);
             self.pieces.push(new_piece);
             return;
         }
 
         // Split an existing piece
         let piece = &self.pieces[location.idx];
-        let (left, right) = piece.split(location.offset);
-        let new_piece = Piece::new(self.added.clone(), self.added.len() - 1, 1);
+        let (left, right) = self.split_piece(piece, location.offset);
+        let new_piece = self.new_piece(PieceSource::Added, self.added.len() - 1, 1);
 
         // Replace the old piece with the new pieces
         let new_pieces: Vec<Piece> = [left, new_piece, right]
@@ -283,12 +299,12 @@ impl TextBuffer for PieceTableBuffer {
 
             let piece_remaining = piece.length - offset;
             if piece_remaining > remaining as usize {
-                let (_, right) = piece.split(offset + remaining as usize);
+                let (_, right) = self.split_piece(piece, offset + remaining as usize);
                 new_right = Some(right);
             }
 
             if offset != 0 {
-                let (left, _) = piece.split(offset);
+                let (left, _) = self.split_piece(piece, offset);
                 new_left = Some(left);
             }
             remaining -= piece_remaining as isize;
